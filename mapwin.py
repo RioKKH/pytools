@@ -206,60 +206,10 @@ class Gmc(Mapwin):
 
         order = _num2order[len(self.a)]
         print('order: ', order)
-        if order == 1:
-            xdev = [px[0]
-                    + px[1]*x[i]*mpl+px[2]*y[i]*mpl
-                    for i in range(0, length)]
-            ydev = [py[0]
-                    + py[1]*x[i]*mpl+py[2]*y[i]*mpl
-                    for i in range(0, length)]
-        elif order == 2:
-            xdev = [px[0]
-                    + px[1]*x[i]*mpl + px[2]*y[i]*mpl
-                    + px[3]*x[i]**2*mpl**2 + px[4]*x[i]*y[i]*mpl**2
-                    + px[5]*y[i]**2*mpl**2
-                    for i in range(0, length)]
-            ydev = [py[0]
-                    + py[1]*x[i]*mpl + py[2]*y[i]*mpl
-                    + py[3]*x[i]**2*mpl**2 + py[4]*x[i]*y[i]*mpl**2
-                    + py[5]*y[i]**2*mpl**2
-                    for i in range(0, length)]
-        elif order == 3:
-            xdev = [px[0]
-                    + px[1]*x[i]*mpl + px[2]*y[i]*mpl
-                    + px[3]*x[i]**2*mpl**2 + px[4]*x[i]*y[i]*mpl**2
-                    + px[5]*y[i]**2*mpl**2
-                    + px[6]*x[i]**3*mpl**3 + px[7]*x[i]**2*y[i]*mpl**3
-                    + px[8]*x[i]*y[i]**2*mpl**3 + px[9]*y[i]**3*mpl**3
-                    for i in range(0, length)]
-            ydev = [py[0]
-                    + py[1]*x[i]*mpl + py[2]*y[i]*mpl
-                    + py[3]*x[i]**2*mpl**2 + py[4]*x[i]*y[i]*mpl**2
-                    + py[5]*y[i]**2*mpl**2
-                    + py[6]*x[i]**3*mpl**3 + py[7]*x[i]**2*y[i]*mpl**3
-                    + py[8]*x[i]*y[i]**2*mpl**3 + py[9]*y[i]**3*mpl**3
-                    for i in range(0, length)]
-        elif order == 4:
-            xdev = [px[0]
-                    + px[1]*x[i]*mpl + px[2]*y[i]*mpl
-                    + px[3]*x[i]**2*mpl**2 + px[4]*x[i]*y[i]*mpl**2
-                    + px[5]*y[i]**2*mpl**2
-                    + px[6]*x[i]**3*mpl**3 + px[7]*x[i]**2*y[i]*mpl**3
-                    + px[8]*x[i]*y[i]**2*mpl**3 + px[9]*y[i]**3*mpl**3
-                    + px[10]*x[i]**4*mpl**4 + px[11]*x[i]**3*y[i]*mpl**4
-                    + px[12]*x[i]**2*y[i]**2*mpl**4
-                    + px[13]*x[i]*y[i]**3*mpl**4 + px[14]*y[i]**4*mpl**4
-                    for i in range(0, length)]
-            ydev = [py[0]
-                    + py[1]*x[i]*mpl + py[2]*y[i]*mpl
-                    + py[3]*x[i]**2*mpl**2 + py[4]*x[i]*y[i]*mpl**2
-                    + py[5]*y[i]**2*mpl**2
-                    + py[6]*x[i]**3*mpl**3 + py[7]*x[i]**2*y[i]*mpl**3
-                    + py[8]*x[i]*y[i]**2*mpl**3 + py[9]*y[i]**3*mpl**3
-                    + py[10]*x[i]**4*mpl**4 + py[11]*x[i]**3*y[i]*mpl**4
-                    + py[12]*x[i]**2*y[i]**2*mpl**4
-                    + py[13]*x[i]*y[i]**3*mpl**4 + py[14]*y[i]**4*mpl**4
-                    for i in range(0, length)]
+        exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
+        for i, exp in enumerate(exps):
+            xdev = px[i] * x[i] ** exp[i][0] * y[i] ** exp[i][1] * mpl ** (exp[i][0] + exp[i][1])
+            ydev = py[i] * x[i] ** exp[i][0] * y[i] ** exp[i][1] * mpl ** (exp[i][0] + exp[i][1])
 
         _regi = Regi()
         _regi.name = 'gmc2regi(order:{order:d})'.format(order=order)
@@ -454,6 +404,7 @@ class Regi(Mapwin):
                     break
 
         grid = self.make_grid(xgrid, xpitch)
+        print(np.shape(grid))
     
         # with this data manipulation, "data" has become (x, 1) which was
         # originally (x, )
@@ -601,39 +552,16 @@ class Regi(Mapwin):
         print("X rotation[10-5 rad]:\t{0:5.4f}".format(xrotation*1e5))
         print("Y rotation[10-5 rad]:\t{0:5.4f}".format(yrotation*1e5))
 
-    def report_gmc(self, order=3, filename='gmcparam.txt'):
-        if order == 1:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x*1e3 + p[2]*y*1e3
-            p0 = [0]*3
-        elif order == 2:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x*1e3 + p[2]*y*1e3\
-                + p[3]*x**2*1e3**2 + p[4]*x*y*1e3**2 + p[5]*y**2*1e3**2
-            p0 = [0]*6
-        elif order == 3:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x*1e3 + p[2]*y*1e3\
-                + p[3]*x**2*1e3**2 + p[4]*x*y*1e3**2 + p[5]*y**2*1e3**2\
-                + p[6]*x**3*1e3**3 + p[7]*x**2*y*1e3**3\
-                + p[8]*x*y**2*1e3**3 + p[9]*y**3*1e3**3
-            p0 = [0]*10
-        elif order == 4:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x*1e3 + p[2]*y*1e3\
-                + p[3]*x**2*1e3**2 + p[4]*x*y*1e3**2 + p[5]*y**2*1e3**2\
-                + p[6]*x**3*1e3**3 + p[7]*x**2*y*1e3**3\
-                + p[8]*x*y**2*1e3**3 + p[9]*y**3*1e3**3\
-                + p[10]*x**4*1e3**4 + p[11]*x**3*y*1e3**4\
-                + p[12]*x**2*y**2*1e3**4 + p[13]*x*y**3*1e3**4\
-                + p[14]*y**4*1e3**4
-            p0 = [0]*15
+    def fitfunc(self, exps, p, x, y):
+        total = 0
+        for i, exp in enumerate(exps):
+            total += p[i] * x**exp[i][0] * y**exp[i][1]
+        return total
 
-        errfunc = lambda p, x, y, z: fitfunc(p, x, y) - z
+    def report_gmc(self, order=3, filename='gmcparam.txt'):
+        exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
+        p[0]
+        errfunc = lambda p, x, y, z: self.fitfunc(order, p, x, y) - z
         dropna = self.data.dropna()
         resx = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.xdev))
         resy = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.ydev))
@@ -669,35 +597,7 @@ class Regi(Mapwin):
         return _gmc
 
     def fit(self, order=3, filename='fit.txt'):
-        if order == 1:
-            fitfunc = lambda p, x, y:\
-                p[0] + p[1]*x + p[2]*y
-            p0 = [0]*3
-        elif order == 2:
-            fitfunc = lambda p, x, y:\
-                p[0] + p[1]*x + p[2]*y\
-                + p[3]*x**2 + p[4]*x*y + p[5]*y**2
-            p0 = [0]*6
-        elif order == 3:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x + p[2]*y + p[3]*x**2 + p[4]*x*y\
-                + p[5]*y**2 + p[6]*x**3 + p[7]*x**2*y + p[8]*x*y**2\
-                + p[9]*y**3*1e3**3
-            p0 = [0]*10
-        elif order == 4:
-            fitfunc = lambda p, x, y:\
-                p[0]\
-                + p[1]*x + p[2]*y\
-                + p[3]*x**2 + p[4]*x*y + p[5]*y**2\
-                + p[6]*x**3 + p[7]*x**2*y\
-                + p[8]*x*y**2 + p[9]*y**3\
-                + p[10]*x**4 + p[11]*x**3*y\
-                + p[12]*x**2*y**2 + p[13]*x*y**3\
-                + p[14]*y**4
-            p0 = [0]*15
-
-        errfunc = lambda p, x, y, z: fitfunc(p, x, y) - z
+        errfunc = lambda p, x, y, z: fitfunc(order, p, x, y) - z
         dropna = self.data.dropna()
         resx = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.xdev))
         resy = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.ydev))
