@@ -208,8 +208,8 @@ class Gmc(Mapwin):
         print('order: ', order)
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
         for i, exp in enumerate(exps):
-            xdev = px[i] * x[i] ** exp[i][0] * y[i] ** exp[i][1] * mpl ** (exp[i][0] + exp[i][1])
-            ydev = py[i] * x[i] ** exp[i][0] * y[i] ** exp[i][1] * mpl ** (exp[i][0] + exp[i][1])
+            xdev = px[i] * x[i] ** exp[0] * y[i] ** exp[1] * mpl ** (exp[0] + exp[1])
+            ydev = py[i] * x[i] ** exp[0] * y[i] ** exp[1] * mpl ** (exp[0] + exp[1])
 
         _regi = Regi()
         _regi.name = 'gmc2regi(order:{order:d})'.format(order=order)
@@ -552,19 +552,19 @@ class Regi(Mapwin):
         print("X rotation[10-5 rad]:\t{0:5.4f}".format(xrotation*1e5))
         print("Y rotation[10-5 rad]:\t{0:5.4f}".format(yrotation*1e5))
 
-    def fitfunc(self, exps, p, x, y):
+    def fitfunc(self, p, exps, mpl, x, y):
         total = 0
         for i, exp in enumerate(exps):
-            total += p[i] * x**exp[i][0] * y**exp[i][1]
+            total += p[i] * x**exp[0] * y**exp[1] * mpl**(exp[0] + exp[1])
         return total
 
     def report_gmc(self, order=3, filename='gmcparam.txt'):
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
-        p[0]
-        errfunc = lambda p, x, y, z: self.fitfunc(order, p, x, y) - z
+        p0 = [0] * len(exps)
+        errfunc = lambda p, exps, mpl, x, y, z: self.fitfunc(p, exps, mpl, x, y) - z
         dropna = self.data.dropna()
-        resx = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.xdev))
-        resy = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.ydev))
+        resx = leastsq(errfunc, p0[:], args = (exps, 1e3, dropna.x, dropna.y, dropna.xdev))
+        resy = leastsq(errfunc, p0[:], args = (exps, 1e3, dropna.x, dropna.y, dropna.ydev))
         _gmc = Gmc()
         #_gmc = Gmc(order=order)
         #for i in range(0, _order[order]):
@@ -597,10 +597,12 @@ class Regi(Mapwin):
         return _gmc
 
     def fit(self, order=3, filename='fit.txt'):
-        errfunc = lambda p, x, y, z: fitfunc(order, p, x, y) - z
+        exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
+        p0 = [0] * len(exps)
+        errfunc = lambda p, exps, mpl, x, y, z: fitfunc(p, exps, mpl, x, y) - z
         dropna = self.data.dropna()
-        resx = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.xdev))
-        resy = leastsq(errfunc, p0[:], args = (dropna.x, dropna.y, dropna.ydev))
+        resx = leastsq(errfunc, p0[:], args = (exps, 1, dropna.x, dropna.y, dropna.xdev))
+        resy = leastsq(errfunc, p0[:], args = (exps, 1, dropna.x, dropna.y, dropna.ydev))
 
         print(resx[0])
         print(resy[0])
