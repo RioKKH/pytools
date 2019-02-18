@@ -6,15 +6,10 @@ import copy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-#import scikit-learn
-#import seaborn as sns
 from scipy.optimize import leastsq
 from scipy import interpolate
+from numba import jit
 
-_order = {1:3, 2:6, 3:10, 4:15}
-_num2order = {3:1, 6:2, 10:3, 15:4}
-_coef2order = {0:0, 1:1, 2:1, 3:2, 4:2, 5:2, 6:3, 7:3, 8:3, 9:3, 10:4,
-               11:4, 12:4, 13:4, 14:4}
 
 class Mapwin(object):
     """Base class for Regi, GMC, and Map."""
@@ -76,6 +71,7 @@ class Mapwin(object):
                 print('grid and/or pitch doesn\'t match')
                 return 1
 
+
     def __mul__(self, other):
         if type(other) == int or type(other) == float:
             tmp = copy.deepcopy(self)
@@ -84,6 +80,7 @@ class Mapwin(object):
             tmp.xmean = tmp.data.xdev.mean()
             tmp.ymean = tmp.data.ydev.mean()
             return tmp
+
 
     def __div__(self, other):
         if self.type == 'regi':
@@ -95,6 +92,7 @@ class Mapwin(object):
                 tmp.ymean = tmp.data.ydev.mean()
                 return tmp
 
+
     def __truediv__(self, other):
         if self.type == 'regi':
             if type(other) == int or type(other) == float:
@@ -105,21 +103,54 @@ class Mapwin(object):
                 tmp.ymean = tmp.data.ydev.mean()
                 return tmp
 
-    def make_grid(self, gridnum, pitch):
-        if gridnum % 2 == 0:
-            tmpgrid = np.array([[(-1.0*pitch)*gridnum/2.0+pitch/2.0+pitch*x,
-                pitch*(gridnum/2.0)-pitch/2.0-pitch*y]
-                for y in range(0, gridnum) for x in range(0, gridnum)])
+
+    def get_num_of_terms(self, num_of_order):
+        num_of_terms = 1
+        if num_of_order == 0:
+            return num_of_terms
         else:
-            tmpgrid = np.array([[(-1.0*pitch)*((gridnum-1.0)/2.0)+pitch*x,
-                pitch*((gridnum-1.0)/2.0)-pitch*y]
-                for y in range(0, gridnum) for x in range(0, gridnum)])
+            for i in range(num_of_order):
+                num_of_terms += (i + 2)
+
+            return num_of_terms
+
+    def get_num_of_order(self, num_of_terms):
+        order = 0
+        while True:
+            temp_num_of_terms = self.get_num_of_terms(order)
+            if num_of_terms == temp_num_of_terms:
+                return order
+            else:
+                order += 1
+
+    def fitfunc(self, p, exps, mpl, x, y):
+        total = 0
+        for i, exp in enumerate(exps):
+            total += p[i] * x**exp[0] * y**exp[1] * mpl**(exp[0] + exp[1])
+        return total
+
+    def make_grid(self, xgridnum, xpitch, ygridnum, ypitch):
+        if (xgridnum % 2 == 0) & (ygridnum % 2 == 0):
+            tmpgrid = np.array([[(-1.0*xpitch) * xgridnum/2.0 + xpitch/2.0 + xpitch*x,
+                ypitch * (ygridnum/2.0) - ypitch/2.0 - ypitch*y]
+                for y in range(0, ygridnum) for x in range(0, xgridnum)])
+        elif (xgridnum % 2 == 0) & (ygridnum % 2 != 0):
+            tmpgrid = np.array([[(-1.0*xpitch) * xgridnum/2.0 + xpitch/2.0 + xpitch*x,
+                ypitch * ((ygridnum - 1.0)/2.0) - ypitch*y]
+                for y in range(0, ygridnum) for x in range(0, xgridnum)])
+        elif (xgridnum % 2 != 0) & (ygridnum % 2 == 0):
+            tmpgrid = np.array([[(-1.0*xpitch) * ((xgridnum-1.0)/2.0) + xpitch*x,
+                ypitch * (ygridnum/2.0) - ypitch/2.0 -ypitch*y]
+                for y in range(0, ygridnum) for x in range(0, xgridnum)])
+        elif (xgridnum % 2 != 0) & (ygridnum % 2 != 0):
+            tmpgrid = np.array([[(-1.0*xpitch) * ((xgridnum-1.0)/2.0) + xpitch*x,
+                ypitch * ((ygridnum - 1.0)/2.0) - ypitch*y]
+                for y in range(0, ygridnum) for x in range(0, xgridnum)])
         return tmpgrid
 
     def make_interpolation(self, kind='linear'):
         """ To match with IPRO data format, x grid starts from minus, and Y
-        grid starts from plus.
-        """
+        grid starts from plus.  """
         tempx = self.data.x.copy()
         tempy = self.data.y.copy()
         # Acending: from minus to plus
@@ -137,21 +168,17 @@ class Mapwin(object):
 
 
 class Gmc(Mapwin):
-    def __init__(self):
+    def __init__(self, order=3):
         self.type = 'gmc'
         self.name = 'gmc param'
-        # prepare coef for 4th order polynomial equation
-        self.a = np.zeros(_order[4])
-        self.b = np.zeros(_order[4])
+        self.order = order
+        self.a = np.zeros(self.get_num_of_terms(order))
+        self.b = np.zeros(self.get_num_of_terms(order))
 
     def load_gmc_data(self, mapwin_gmc_file):
         """ load mapwin-formated gmc file"""
-        #df = pd.read_table(mapwin_gmc_file, delimitor='=', comment='//')
         with open(mapwin_gmc_file, 'r') as f:
             for line in f:
-                #index = '{0:s}'.format(line.split('=')[0])
-                #coef = '{0:s}'.format(line.split('=')[1])
-                #print index, coef
                 if line[0:2] == '//':
                     pass
                 elif line[0:1] == 'A':
@@ -178,12 +205,16 @@ class Gmc(Mapwin):
                     text = 'A{index:d}={num:e}\n'.format(index=i, num=self.b[i])
                     file.write(text)
 
-    def gmc2regi(self, grid='', pitch='', unit='nm'):
+    def gmc2regi(self,
+                 xgrid=None, xpitch=None,
+                 ygrid=None, ypitch=None,
+                 unit='nm'):
         """
         This method converts gmc coefficient into registration data, which is
         like mapwin graph.
         """
-        tmpgrid = self.make_grid(gridnum=grid, pitch=pitch)
+        tmpgrid = self.make_grid(xgridnum=xgrid, xpitch=xpitch,
+                                 ygridnum=ygrid, ypitch=ypitch)
 
         if unit == 'nm':
             px = self.a*1e-3  #convert um to nm
@@ -204,19 +235,22 @@ class Gmc(Mapwin):
         y = tmpgrid[:,1]
         length = len(tmpgrid)
 
-        order = _num2order[len(self.a)]
+        order = self.get_num_of_order(len(self.a))
         print('order: ', order)
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
-        for i, exp in enumerate(exps):
-            xdev = px[i] * x[i] ** exp[0] * y[i] ** exp[1] * mpl ** (exp[0] + exp[1])
-            ydev = py[i] * x[i] ** exp[0] * y[i] ** exp[1] * mpl ** (exp[0] + exp[1])
+        xdev = []
+        ydev = []
+        for i in range(0, length):
+            xdev.append(self.fitfunc(px, exps, mpl, x[i], y[i]))
+            ydev.append(self.fitfunc(py, exps, mpl, x[i], y[i]))
 
         _regi = Regi()
         _regi.name = 'gmc2regi(order:{order:d})'.format(order=order)
-        _regi.xgrid = grid
-        _regi.ygrid = grid
-        _regi.xpitch = pitch
-        _regi.ypitch = pitch
+        _regi.xgrid = xgrid
+        _regi.ygrid = ygrid
+        _regi.xpitch = xpitch
+        _regi.ypitch = ypitch
+        print(len(x), len(y), len(xdev), len(ydev))
         _regi.data = pd.DataFrame({'x':x, 'y':y, 'xdev':xdev, 'ydev':ydev})
         _regi.xmean = _regi.data.xdev.mean()
         _regi.ymean = _regi.data.ydev.mean()
@@ -403,7 +437,8 @@ class Regi(Mapwin):
                 elif i == 6:
                     break
 
-        grid = self.make_grid(xgrid, xpitch)
+        grid = self.make_grid(xgrid, xpitch, ygrid, ypitch)
+        print(grid)
         print(np.shape(grid))
     
         # with this data manipulation, "data" has become (x, 1) which was
@@ -420,6 +455,7 @@ class Regi(Mapwin):
         # devide data into both xdev and ydev
         xdev = data[xdevini:xdevend]
         ydev = data[ydevini:ydevend]
+        print("grid:", np.shape(grid), 'xdev', np.shape(xdev), 'ydev', np.shape(ydev))
         
         self.data = pd.DataFrame(np.concatenate((grid, xdev, ydev), axis = 1),
                 columns = ['x', 'y', 'xdev', 'ydev'])
@@ -447,9 +483,9 @@ class Regi(Mapwin):
             grid scale  =  5nm
             Normalized grid = False
         """
-        if self.xgrid != self.ygrid:
-            print("Grid number of X and Y must be same")
-            return 1
+        #if self.xgrid != self.ygrid:
+        #    print("Grid number of X and Y must be same")
+        #    return 1
 
         xgrid = self.data.x.unique()
         ygrid = self.data.y.unique()
@@ -552,12 +588,6 @@ class Regi(Mapwin):
         print("X rotation[10-5 rad]:\t{0:5.4f}".format(xrotation*1e5))
         print("Y rotation[10-5 rad]:\t{0:5.4f}".format(yrotation*1e5))
 
-    def fitfunc(self, p, exps, mpl, x, y):
-        total = 0
-        for i, exp in enumerate(exps):
-            total += p[i] * x**exp[0] * y**exp[1] * mpl**(exp[0] + exp[1])
-        return total
-
     def report_gmc(self, order=3, filename='gmcparam.txt'):
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
         p0 = [0] * len(exps)
@@ -565,11 +595,7 @@ class Regi(Mapwin):
         dropna = self.data.dropna()
         resx = leastsq(errfunc, p0[:], args = (exps, 1e3, dropna.x, dropna.y, dropna.xdev))
         resy = leastsq(errfunc, p0[:], args = (exps, 1e3, dropna.x, dropna.y, dropna.ydev))
-        _gmc = Gmc()
-        #_gmc = Gmc(order=order)
-        #for i in range(0, _order[order]):
-            #_gmc.a[i] = resx[0][i] * -1
-            #_gmc.b[i] = resy[0][i] * -1
+        _gmc = Gmc(order=order)
 
         """"to match with mapwin coefficient, multiplying 1e3 to derived
         coefficient is needed. I'm not sure the exact reason why this 1e3
@@ -599,7 +625,7 @@ class Regi(Mapwin):
     def fit(self, order=3, filename='fit.txt'):
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
         p0 = [0] * len(exps)
-        errfunc = lambda p, exps, mpl, x, y, z: fitfunc(p, exps, mpl, x, y) - z
+        errfunc = lambda p, exps, mpl, x, y, z: self.fitfunc(p, exps, mpl, x, y) - z
         dropna = self.data.dropna()
         resx = leastsq(errfunc, p0[:], args = (exps, 1, dropna.x, dropna.y, dropna.xdev))
         resy = leastsq(errfunc, p0[:], args = (exps, 1, dropna.x, dropna.y, dropna.ydev))
@@ -611,7 +637,7 @@ class Regi(Mapwin):
             for x,y in zip(resx[0], resy[0]):
                 f.write("%e,%e\n" %(x, y))
 
-        _gmc = Gmc()
+        _gmc = Gmc(order=order)
         _gmc.a = resx[0]
         _gmc.b = resy[0]
         return _gmc
@@ -668,7 +694,8 @@ class Regi(Mapwin):
 
     def applycoef(self, order=3, unit='nm'):
         gmc = self.report_gmc(order=order)
-        return self + gmc.gmc2regi(grid=self.xgrid, pitch=self.xpitch,
+        return self + gmc.gmc2regi(xgrid=self.xgrid, xpitch=self.xpitch,
+                                   ygrid=self.ygrid, ypitch=self.ypitch,
                                    unit=unit)
 
     def applymap(self):
