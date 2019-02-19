@@ -228,15 +228,15 @@ class Gmc(Mapwin):
             print("Unit must be either of 'nm' or 'um'")
             sys.exit(1)
 
-        print("Unit: %s" %unit)
-        print(px, py)
+        #print("Unit: %s" %unit)
+        #print(px, py)
 
         x = tmpgrid[:,0]
         y = tmpgrid[:,1]
         length = len(tmpgrid)
 
         order = self.get_num_of_order(len(self.a))
-        print('order: ', order)
+        #print('order: ', order)
         exps = [(k-n, n) for k in range(order+1) for n in range(k+1)]
         xdev = []
         ydev = []
@@ -250,7 +250,7 @@ class Gmc(Mapwin):
         _regi.ygrid = ygrid
         _regi.xpitch = xpitch
         _regi.ypitch = ypitch
-        print(len(x), len(y), len(xdev), len(ydev))
+        #print(len(x), len(y), len(xdev), len(ydev))
         _regi.data = pd.DataFrame({'x':x, 'y':y, 'xdev':xdev, 'ydev':ydev})
         _regi.xmean = _regi.data.xdev.mean()
         _regi.ymean = _regi.data.ydev.mean()
@@ -412,10 +412,12 @@ class Map(Mapwin):
 class Regi(Mapwin):
     def __init__(self, file = ''):
         self.type = 'regi'
+        self.name = None
         self.xgrid = 0
         self.ygrid = 0
         self.xpitch = 0
         self.ypitch = 0
+        self.z = None
 
     def load_data(self, mapwin_file):
         """ load mapwin-formated data and calcurate grid coordinates"""
@@ -438,8 +440,6 @@ class Regi(Mapwin):
                     break
 
         grid = self.make_grid(xgrid, xpitch, ygrid, ypitch)
-        print(grid)
-        print(np.shape(grid))
     
         # with this data manipulation, "data" has become (x, 1) which was
         # originally (x, )
@@ -702,6 +702,46 @@ class Regi(Mapwin):
         pass
 
 
+def make_AB_map(dfp, dfm):
+    def _linear_fit(narray, z):
+        p = np.polyfit(z, narray[[0,1]], 1)
+        return p
+
+    z = [dfp.z, dfm.z]
+    x = dfp.data.x
+    y = dfp.data.y
+    xdev = pd.concat([dfp.data.xdev, dfm.data.xdev], axis=1)
+    ydev = pd.concat([dfp.data.ydev, dfm.data.ydev], axis=1)
+    xab = np.apply_along_axis(_linear_fit, 1, xdev, z)
+    yab = np.apply_along_axis(_linear_fit, 1, ydev, z)
+
+    amap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,0], "ydev":yab[:,0]})
+    bmap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,1], "ydev":yab[:,1]})
+
+    dfa = Regi() 
+    dfb = Regi() 
+
+    dfa.name = 'A map'
+    dfa.xgrid = dfp.xgrid
+    dfa.xpitch = dfp.xpitch
+    dfa.ygrid = dfp.ygrid
+    dfa.ypitch = dfp.ypitch
+    dfa.data = amap
+    dfa.xmean = dfa.data.xdev.mean()
+    dfa.ymean = dfa.data.ydev.mean()
+
+    dfb.name = 'B map'
+    dfb.xgrid = dfp.xgrid
+    dfb.xpitch = dfp.xpitch
+    dfb.ygrid = dfp.ygrid
+    dfb.ypitch = dfp.ypitch
+    dfb.data = bmap
+    dfb.xmean = dfb.data.xdev.mean()
+    dfb.ymean = dfb.data.ydev.mean()
+
+    return dfa, dfb
+
+
 def multiplot(df=(), ref=None, scale=5, normalized=False, shift=True):
     """
     df: dataframe of mapwin data
@@ -712,7 +752,8 @@ def multiplot(df=(), ref=None, scale=5, normalized=False, shift=True):
     color_idx = np.linspace(0, 1, len(df))
     legend_list = ['grid 1div: {0:.0f}[nm]'.format(scale)]
     for i, mw in zip(color_idx, df):
-        print('plotting {0:s}'.format(mw.name))
+        print('plotting %s' % mw.name)
+        #print('plotting {0:s}'.format(mw.name))
         if ref is not None:
             mw = mw-ref
         xgrid = mw.data.x.unique()
