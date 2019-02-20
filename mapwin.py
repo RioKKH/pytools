@@ -702,18 +702,32 @@ class Regi(Mapwin):
         pass
 
 
-def make_AB_map(dfp, dfm):
+def make_AB_map(dfs):
     def _linear_fit(narray, z):
-        p = np.polyfit(z, narray[[0,1]], 1)
-        return p
+        if np.isnan(narray).any():
+            return np.full(np.shape(2), np.nan)
+        else:
+            p = np.polyfit(z, narray, 1)
+            return p
 
-    z = [dfp.z, dfm.z]
-    x = dfp.data.x
-    y = dfp.data.y
-    xdev = pd.concat([dfp.data.xdev, dfm.data.xdev], axis=1)
-    ydev = pd.concat([dfp.data.ydev, dfm.data.ydev], axis=1)
-    xab = np.apply_along_axis(_linear_fit, 1, xdev, z)
-    yab = np.apply_along_axis(_linear_fit, 1, ydev, z)
+    x = dfs[0].data.x
+    y = dfs[0].data.y
+    z = []
+    xdev = pd.DataFrame()
+    ydev = pd.DataFrame()
+    for df in dfs:
+        xdev = pd.concat([xdev, df.data.xdev], axis=1)
+        ydev = pd.concat([ydev, df.data.ydev], axis=1)
+        z.append(df.z)
+    
+    #print(np.shape(xdev), np.shape(z))
+    #print(xdev, z)
+    #print(np.isnan(xdev), np.isnan(ydev))
+
+    #return xdev.values, ydev.values
+
+    xab = np.apply_along_axis(_linear_fit, 1, xdev.values, z)
+    yab = np.apply_along_axis(_linear_fit, 1, ydev.values, z)
 
     amap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,0], "ydev":yab[:,0]})
     bmap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,1], "ydev":yab[:,1]})
@@ -722,19 +736,19 @@ def make_AB_map(dfp, dfm):
     dfb = Regi() 
 
     dfa.name = 'A map'
-    dfa.xgrid = dfp.xgrid
-    dfa.xpitch = dfp.xpitch
-    dfa.ygrid = dfp.ygrid
-    dfa.ypitch = dfp.ypitch
+    dfa.xgrid = dfs[0].xgrid
+    dfa.xpitch = dfs[0].xpitch
+    dfa.ygrid = dfs[0].ygrid
+    dfa.ypitch = dfs[0].ypitch
     dfa.data = amap
     dfa.xmean = dfa.data.xdev.mean()
     dfa.ymean = dfa.data.ydev.mean()
 
     dfb.name = 'B map'
-    dfb.xgrid = dfp.xgrid
-    dfb.xpitch = dfp.xpitch
-    dfb.ygrid = dfp.ygrid
-    dfb.ypitch = dfp.ypitch
+    dfb.xgrid = dfs[0].xgrid
+    dfb.xpitch = dfs[0].xpitch
+    dfb.ygrid = dfs[0].ygrid
+    dfb.ypitch = dfs[0].ypitch
     dfb.data = bmap
     dfb.xmean = dfb.data.xdev.mean()
     dfb.ymean = dfb.data.ydev.mean()
