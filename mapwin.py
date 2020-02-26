@@ -8,7 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import leastsq
 from scipy import interpolate
-from numba import jit
 
 
 class Mapwin(object):
@@ -478,7 +477,7 @@ class Regi(Mapwin):
         tmp.name = 'shifted ' + self.name
         return tmp
 
-    def plot(self, scale=5, normalized=False):
+    def plot(self, scale=5, normalized=False, save=False, xylim=50):
         """ initial settings
             grid scale  =  5nm
             Normalized grid = False
@@ -487,12 +486,13 @@ class Regi(Mapwin):
         #    print("Grid number of X and Y must be same")
         #    return 1
 
+        # make figure and axes
         xgrid = self.data.x.unique()
         ygrid = self.data.y.unique()
-        fig = plt.figure()
+        fig = plt.figure(figsize=(5, 5))
         ax = fig.add_subplot(111, aspect='equal')
-        ### ax.set_aspect('equal')
-        ### plt.axes().set_aspect('equal')
+
+        # plot grid
         ax.plot(self.data.x, self.data.y, '+', color='gray')
         boolxy = np.logical_or(np.isnan(self.data.xdev),
                                np.isnan(self.data.ydev))
@@ -500,19 +500,29 @@ class Regi(Mapwin):
                 self.data.y[boolxy],
                 '+', color='red')
         print("scale %f" % scale)
+
+        # plot data
         for x in xgrid:
-            ax.plot(((self.data[self.data.x == x].xdev)*1000)/scale
-                    * self.xpitch + self.data[self.data.x == x].x,
-                    ((self.data[self.data.x == x].ydev)*1000)/scale
-                    * self.ypitch + self.data[self.data.x == x].y,
-                    'b-', alpha = 0.8)
-        for y in ygrid:
-            ax.plot(((self.data[self.data.y == y].xdev)*1000)/scale
-                    * self.xpitch + self.data[self.data.y == y].x,
-                    ((self.data[self.data.y == y].ydev)*1000)/scale
-                    * self.ypitch + self.data[self.data.y == y].y,
+            ax.plot(self.data[self.data.x == x].xdev * 1000 * self.xpitch / scale + self.data[self.data.x == x].x,
+                    self.data[self.data.x == x].ydev * 1000 * self.ypitch / scale + self.data[self.data.x == x].y,
                     'b-', alpha = 0.8)
 
+            #ax.plot(((self.data[self.data.x == x].xdev)*1000)/scale
+            #        * self.xpitch + self.data[self.data.x == x].x,
+            #        ((self.data[self.data.x == x].ydev)*1000)/scale
+            #        * self.ypitch + self.data[self.data.x == x].y,
+            #        'b-', alpha = 0.8)
+        for y in ygrid:
+            ax.plot(self.data[self.data.y == y].xdev * 1000 * self.xpitch / scale + self.data[self.data.y == y].x,
+                    self.data[self.data.y == y].ydev * 1000 * self.ypitch / scale + self.data[self.data.y == y].y,
+                    'b-', alpha = 0.8)
+            #ax.plot(((self.data[self.data.y == y].xdev)*1000)/scale
+            #        * self.xpitch + self.data[self.data.y == y].x,
+            #        ((self.data[self.data.y == y].ydev)*1000)/scale
+            #        * self.ypitch + self.data[self.data.y == y].y,
+            #        'b-', alpha = 0.8)
+
+        # put legend
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.1, 
             box.width, box.height*0.9])
@@ -521,14 +531,22 @@ class Regi(Mapwin):
         legend_list.append(self.name)
         ax.legend(legend_list, loc='upper center', bbox_to_anchor=(0.5, -0.05),
                 fontsize=9, fancybox=True, shadow=True)
-        #ax.legend(legend_list, loc='lower center', bbox_to_anchor=(0.5, -0.1))
-        #ax.legend(legend_list, loc = 'lower center',
-        #          bbox_to_anchor = (0.5, -0.2), 
-        #          borderaxespad=0, fontsize=9)
+
+        # ticks settings
+        ax.set_xlim(-xylim, xylim)
+        ax.set_ylim(-xylim, xylim)
         ax.set_xticks([], minor=False)
         ax.set_yticks([], minor=False)
         plt.grid(True)
-        plt.show(block = False)
+
+        # plot or save figure
+        if save:
+            plt.savefig('%s.png' % self.name.replace(' ', '_'),
+                        bbox_inches='tight',
+                        dpi=100)
+        else:
+            plt.show(block = False)
+
 
     def colorplot(self, xmin=-5, xmax=5, ymin=-5, ymax=5):
         if self.xgrid != self.ygrid:
@@ -688,6 +706,16 @@ class Regi(Mapwin):
         tmp.data.reset_index(inplace=True, drop=True)
         return tmp
 
+    def mirrory(self):
+        tmp = copy.deepcopy(self)
+        tmp.data.y *= -1
+        tmp.data.ydev *= -1
+        tmp.data.sort_values(by=['y', 'x'],
+                             ascending=[False, True], inplace=True)
+        tmp.data.reset_index(inplace=True, drop=True)
+        return tmp
+
+
     def interpolation(self, x, y):
         pass
 
@@ -702,7 +730,24 @@ class Regi(Mapwin):
         pass
 
 
-def make_AB_map(dfs):
+def make_AB_map(dfs, outfmt='nm/zum'):
+    """
+    Make AB map.
+
+    Parameters
+    --------------------------
+    dfs : List of pandas.DataFrame
+    outfmt : String
+        'nm/zum' or 'mrad'
+
+    Returns
+    dfa : mapwin.Regi()
+        A map in either nm/zum or mrad
+    dfb : mapwin.Regi()
+        B map in nm/zum
+    --------------------------
+    """
+
     def _linear_fit(narray, z):
         if np.isnan(narray).any():
             return np.full(np.shape(2), np.nan)
@@ -732,10 +777,18 @@ def make_AB_map(dfs):
     amap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,0], "ydev":yab[:,0]})
     bmap = pd.DataFrame({"x":x, "y":y, "xdev":xab[:,1], "ydev":yab[:,1]})
 
+    if outfmt == 'mrad':
+        # Z = 1um in Y direction.
+        # f_convmrad will return angle in rad.
+        # This will be converted to mrad when it's plotted.
+        f_convmrad = lambda x: np.arctan2(x, 1.0) # [rad]
+        amap['xdev'] = amap['xdev'].apply(f_convmrad)
+        amap['ydev'] = amap['ydev'].apply(f_convmrad)
+
     dfa = Regi() 
     dfb = Regi() 
 
-    dfa.name = 'A map'
+    dfa.name = "A map" + "[" + outfmt + "]"
     dfa.xgrid = dfs[0].xgrid
     dfa.xpitch = dfs[0].xpitch
     dfa.ygrid = dfs[0].ygrid
@@ -756,7 +809,7 @@ def make_AB_map(dfs):
     return dfa, dfb
 
 
-def multiplot(df=(), ref=None, scale=5, normalized=False, shift=True):
+def multiplot(df=(), ref=None, scale=5, normalized=False, shift=True, save=False):
     """
     df: dataframe of mapwin data
     """
@@ -819,7 +872,13 @@ def multiplot(df=(), ref=None, scale=5, normalized=False, shift=True):
     ax1.set_xticks([], minor=False)
     ax1.set_yticks([], minor=False)
     ax1.grid(True)
-    plt.show(block = False)
+    if save:
+        plt.savefig('%s_%s.png' % (mw.name.replace(' ', '_'),
+                                   ref.name.replace(' ', '_')), 
+                    bbox_inches='tight',
+                    dpi=100)
+    else:
+        plt.show(block = False)
 
 
 if __name__ == '__main__':
