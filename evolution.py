@@ -24,6 +24,20 @@ def load_elapsed_time(fin:str) -> pd.DataFrame:
     return df
 
 
+def compare_stats(dfCPU: pd.DataFrame,
+                  dfGPU: pd.DataFrame) -> None:
+    ax = dfCPU.fitmean.plot()
+    dfGPU.fitmean.plot(ax=ax)
+    ax.axhline(y=1024, alpha=0.5, color='black')
+
+    ax.grid(ls='dashed', color='gray', alpha=0.5)
+    ax.legend(['CPU', 'GPU'])
+    ax.set_xlabel('Generations')
+    ax.set_ylabel('Fitness')
+    ax.set_ylim(500, 1024)
+    plt.show()
+
+
 def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=10000) -> None:
     def _plot(cgpu, vmin=vmin, vmax=vmax):
         sns.heatmap(cgpu, 

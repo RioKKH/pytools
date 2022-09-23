@@ -18,7 +18,8 @@ def main():
     try:
         dobj = load('/'.join([PYTOOLDIR, 'config.toml']))
 
-        child = pexpect.spawn('ssh %s@kagayaki -Y' % dobj['kagayaki_configure']['user'])
+        child = pexpect.spawn('ssh %s@kagayaki -X' % dobj['kagayaki_configure']['user'])
+        #child = pexpect.spawn('ssh %s@kagayaki -Y' % dobj['kagayaki_configure']['user'])
         child.expect("%s" % dobj['kagayaki_configure']['user'])
         child.sendline('%s' % dobj['kagayaki_configure']['pass'])
         child.expect("%s" % dobj['kagayaki_configure']['user'])
