@@ -14,7 +14,7 @@ def plot_scatter(df:pd.DataFrame, drange=1000) -> None:
     plt.grid(ls='dashed', color='gray', alpha=0.5)
     plt.show()
 
-def plot_hist(df:pd.DataFrame) -> None:
-    df.hist()
+def plot_hist(df:pd.DataFrame, nbins=10) -> None:
+    df.hist(bins=nbins)
     plt.show()
 

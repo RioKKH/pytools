@@ -19,8 +19,11 @@ def load_stats(fin:str) -> pd.DataFrame:
 def load_elapsed_time(fin:str) -> pd.DataFrame:
     names = ("POPULATION", "CHROMOSOME", "ELAPSEDTIME")
     df = pd.read_csv(fin,
-                     names = names)
+                     names = names,)
 
+    df.sort_values(by=["POPULATION", "CHROMOSOME"],
+                   ascending=[True, True],
+                   inplace=True)
     return df
 
 
@@ -37,8 +40,20 @@ def compare_stats(dfCPU: pd.DataFrame,
     ax.set_ylim(500, 1024)
     plt.show()
 
+def plot(df, vmin=0, vmax=10000):
+    gpu = df.pivot_table(columns = "POPULATION",
+                         index   = "CHROMOSOME",
+                         values  = "ELAPSEDTIME")[::-1]
 
-def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=10000) -> None:
+    sns.heatmap(gpu,
+                square=True,
+                vmin=vmin, vmax=vmax,
+                cbar=True,
+                xticklabels=True, yticklabels=True)
+    plt.tight_layout()
+    plt.show()
+
+def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=2000) -> None:
     def _plot(cgpu, vmin=vmin, vmax=vmax):
         sns.heatmap(cgpu, 
                     #annot=True, 
