@@ -49,6 +49,7 @@ def plot(df, vmin=0, vmax=10000):
                 square=True,
                 vmin=vmin, vmax=vmax,
                 cbar=True,
+                cmap='jet',
                 xticklabels=True, yticklabels=True)
     plt.tight_layout()
     plt.show()
