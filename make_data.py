@@ -30,12 +30,14 @@ def plot(df:pd.DataFrame):
                  label='original')
     df.plot(x='output_x', y='output_y',
             marker='o', alpha=0.7,
-            xlim=(0, 100), ylim=(0, 100),
+            xlim=(-50, 50), ylim=(-50, 50),
             label='projected',
             ax=ax)
 
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
+    ax.axvline(x=0, color='black')
+    ax.axhline(y=0, color='black')
 
     ax.grid(ls='dashed', color='gray', alpha=0.3)
     ax.set_aspect('equal', 'box')
