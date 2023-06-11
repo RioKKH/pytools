@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 class Perceptron():
 
-    def __init__(self):
+    def __init__(self, w):
         # training data
         self.X = np.array([[1, 1.2],  [1, 0.2],  [1, -0.2],
                            [1, -0.5], [1, -1.0], [1, -1.5]])
         # class label
         self.t = np.array([1, 1, 1, -1, -1, -1])
         # Initialize weight coefficients
-        self.w = np.array([0.5, 0.5])
+        self.w = np.array(w)
+        #self.w = np.array([0.5, 0.5])
         #self.w = np.array([0.5, 0.5]).reshape([-1, 1])
 
         # Learning coefficients
@@ -30,10 +33,10 @@ class Perceptron():
               %(x[0], x[1], w[0], w[1], np.sum(w * x), t, y))
 
         if (t != y):
-            print("before:", t, w, x)
-            print(self.roh * t * x)
+            #print("before:", t, w, x)
+            #print(self.roh * t * x)
             w += self.roh * t * x
-            print("after:", t, w, x)
+            #print("after:", t, w, x)
         return w
 
     def train(self):
@@ -56,7 +59,24 @@ class Perceptron():
     def predict(self):
         pass
 
+def parse_double(value):
+    try:
+        return float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid double value: {value}")
+
+
 if __name__ == '__main__':
-    perceptron = Perceptron()
+    parser = argparse.ArgumentParser(
+        description = "Simple perceptron"
+    )
+    parser.add_argument(
+        '-w', '--weight',
+        dest='w', nargs=2, type=parse_double,
+        help='initial weight as list'
+    )
+    args = parser.parse_args()
+
+    perceptron = Perceptron(args.w)
     perceptron.train()
 
