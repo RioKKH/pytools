@@ -3,12 +3,28 @@
 
 import argparse
 import traceback
+from collections import deque
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Perceptron():
+class RollingQueue:
+
+    def __init__(self, max_size=None):
+        self.queue = deque(maxlen=max_size)
+
+    def append(self, value):
+        self.queue.append(value)
+
+    def mean(self):
+        return np.mean(list(self.queue))
+
+    def variance(self):
+        return np.var(list(self.queue))
+
+
+class Perceptron:
 
     def __init__(self):
         # training data
@@ -19,12 +35,17 @@ class Perceptron():
         # Initialize weight coefficients
         self.wini = None
         self.w = None
-        self.w0 = []
-        self.w1 = []
+        self.w0 = [] # for plot
+        self.w1 = [] # for plot
 
         # Learning coefficients
         self.roh = 0.5 # 学習係数ρ
         self.num_of_loop = 1
+        self.epsilon = 1E-6
+
+        # Queue
+        self.last4w0 = RollingQueue()
+        self.last4w1 = RollingQueue()
 
 
     def init(self):
@@ -84,6 +105,8 @@ class Perceptron():
         self.w = np.array([w0, w1])
         self.w0.append(w0)
         self.w1.append(w1)
+        self.last4w0.append(w0)
+        self.last4w1.append(w1)
 
 
     def save(self, fout='result.csv'):
