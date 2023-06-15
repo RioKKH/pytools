@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 import argparse
 import traceback
 from collections import deque
@@ -12,10 +13,24 @@ import matplotlib.pyplot as plt
 class RollingQueue:
 
     def __init__(self, max_size=None):
-        self.queue = deque(maxlen=max_size)
+        self.queue = deque([0] * max_size, maxlen=max_size)
 
     def append(self, value):
         self.queue.append(value)
+
+    def show(self):
+        for i in list(self.queue):
+            print(f"{i},", end="")
+        print()
+
+    def len(self):
+        return len(self.queue)
+
+    def max(self):
+        return np.max(list(self.queue))
+
+    def min(self):
+        return np.min(list(self.queue))
 
     def mean(self):
         return np.mean(list(self.queue))
@@ -42,10 +57,11 @@ class Perceptron:
         self.roh = 0.5 # 学習係数ρ
         self.num_of_loop = 1
         self.epsilon = 1E-6
+        self.max_size_of_queue = 3
 
         # Queue
-        self.last4w0 = RollingQueue()
-        self.last4w1 = RollingQueue()
+        self.last4w0 = RollingQueue(max_size=self.max_size_of_queue)
+        self.last4w1 = RollingQueue(max_size=self.max_size_of_queue)
 
 
     def init(self):
@@ -65,7 +81,38 @@ class Perceptron:
                  %(x[0], x[1], w[0], w[1], np.sum(w * x), t, y))
         if (t != y):
             dw = self.roh * t * x
-            w = w + dw
+            if (self.last4w0.len() < self.max_size_of_queue):
+                dw = self.roh * t * x
+            else:
+                w0max = self.last4w0.max()
+                w1max = self.last4w1.max()
+                w0min = self.last4w0.min()
+                w1min = self.last4w1.min()
+                w0mean = self.last4w0.mean() 
+                w1mean = self.last4w1.mean() 
+                w0abs = np.abs(w0max - w0min)
+                w1abs = np.abs(w1max - w1min)
+                eps = self.epsilon
+
+                roh0 = 0.5 * (np.abs(w0mean) + self.epsilon)
+                roh1 = 0.5 * (np.abs(w1mean) + self.epsilon)
+
+                #roh0 = 0.1 * (np.abs(w0mean) + eps) / (np.abs(w0max -w0min) + eps)
+                #roh1 = 0.1 * (np.abs(w1mean) + eps) / (np.abs(w1max -w1min) + eps)
+
+                #roh0 = (w0mean + eps) / (np.abs(w0max -w0min) + eps)
+                #roh1 = (w1mean + eps) / (np.abs(w1max -w1min) + eps)
+
+                dw0 = roh0 * t * x[0]
+                dw1 = roh1 * t * x[1]
+                dw = [dw0, dw1]
+
+            w += dw
+            print(f"\nold w0: {w[0]:.2f}, new w0: {w[0] + dw[0]:.2f}")
+            print(f"old w1: {w[1]:.2f}, new w1: {w[1] + dw[1]:.2f}\n")
+            #w = w + dw
+            #self.last4w0.append(dw[0])
+            #self.last4w1.append(dw[1])
 
         self.w0.append(w[0])
         self.w1.append(w[1])
@@ -96,6 +143,9 @@ class Perceptron:
                 for i in range(self.t.size):
                     w = self.evaluate(self.w, self.X[i], self.t[i], fw)
                 break
+
+            if self.num_of_loop >= 20:
+                raise ValueError
 
         fw.close()
 
@@ -140,8 +190,10 @@ def parse_double(value):
 
 if __name__ == '__main__':
     eps = 1E-6
-    X = np.arange(-2, 2+eps, 0.25)
-    Y = np.arange(-2, 2+eps, 0.25)
+    X = [ 1.0, -2.0]
+    Y = [-2.0, -2.0]
+    #X = np.arange(-2, 2+eps, 0.25)
+    #Y = np.arange(-2, 2+eps, 0.25)
     parser = argparse.ArgumentParser(
         description = "Simple perceptron"
     )
@@ -164,5 +216,5 @@ if __name__ == '__main__':
 
     except Exception as e:
         print(e)
-        print(trackback.format_exc())
+        print(traceback.format_exc())
 
