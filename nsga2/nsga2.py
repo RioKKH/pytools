@@ -3,10 +3,30 @@
 
 
 import copy
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+
+class Individual:
+    def __init__(self,
+                 variables,
+                 rank=float('inf'),
+                 crowding_distance=0,
+                 domination_count=0,
+                 dominated_solutions=set()):
+
+        self.variables = variables
+        self.rank = rank
+        self.crowding_distance = crowding_distance
+        self.domination_count = domination_count
+        self.dominated_solutions = dominated_solutions
+        self.objectives = [0, 0]
+
+    def copy(self):
+        return copy.copy(self)
 
 
 class NSGA2:
@@ -35,6 +55,9 @@ class NSGA2:
         self.population = []
 
     def initialize_population(self):
+        """
+        初期個体をランダムに生成する
+        """
         for _ in range(self.population_size):
             variables = np.random.uniform(low=self.variable_range[0], 
                                           high=self.variable_range[1],
@@ -85,25 +108,49 @@ class NSGA2:
         return fronts
 
     def calculate_crowding_distance(self, front):
+        # frontが空の場合、即座に関数を終了する
         if not front:
             return
+        # frontにあるすべての個体のcrowding_distanceをゼロに初期化する
         for individual in front:
             individual.crowding_distance = 0
+        # 各目的変数についてループを回す
         for i in range(self.num_objectives):
+            # i番目の目的変数に基づいてfrontをソートする
             front.sort(key=lambda x: x.objectives[i])
+            # 最初と最後の個体(それぞれ最小値と最大値をもつ)のcrowding_distanceを
+            # 無限大に設定する
             front[0].crowding_distance = float('inf')
             front[-1].crowding_distance = float('inf')
+            # i番目の目的変数の範囲を計算する
             objective_range = front[-1].objectives[i] - front[0].objectives[i]
+            # 目的変数の範囲がゼロ（すべての個体が同じ目的値を持つ）場合、
+            # ループをスキップする
             if objective_range == 0:
                 continue
+            # 各個体のcrowding_distanceを計算する
             for j in range(1, len(front) - 1):
+                # 個体jのcrowding_distanceを、個体j+1と個体j-1の目的変数の差分
+                # （正規化された）を加える事で更新する
                 front[j].crowding_distance\
                     += (front[j+1].objectives[i] - front[j-1].objectives[i]) \
                     / objective_range
 
-    def selection(self):
-        self.population.sort(key=lambda x: (x.rank, -x.crowding_distance))
-        return self.population[:self.population_size]
+    def crowding_distance_tournament_selection(self, tournament_size=2, allow_repetition=False):
+        #selected_population = []
+
+        #while len(selected_population) < self.population_size:
+        if allow_repetition:
+            # Tournament size number of individuals are selected randomly 
+            tournament_individuals = random.choices(self.population, k=tournament_size)
+        else:
+            # Tournament size number of individuals are selected randomly without replacement
+            tournament_individuals = random.sample(self.population, tournament_size)
+
+        tournament_individuals.sort(key=lambda x: (x.rank, -x.crowding_distance))
+
+        return tournament_individuals[0]
+
 
     def crossover(self, parent1, parent2):
         if np.random.random() < self.crossover_rate:
@@ -118,7 +165,7 @@ class NSGA2:
                     if abs(x1 - x2) > 1e-14:
                         beta = 1.0 + (2.0 * min((x1 - xl), (xu - x1)) / (x2 - x1))
                         alpha = 2.0 - beta**-(self.distribution_index_crossover + 1)
-                        print(alpha)
+                        #print(alpha)
                         u = np.random.random()
                         if alpha != 0:
                             if u <= 1.0 / alpha:
@@ -153,47 +200,6 @@ class NSGA2:
             return parent1.copy(), parent2.copy()
 
 
-#    def crossover(self, parent1, parent2):
-#        """
-#        Simulated Binary Crossover, SBXを採用。SBXは2つの親から2つの子を生成する。
-#        子の生成には、親の値と一様乱数を用いた計算が行われる。この計算は親の間で
-#        子の値を分布させることを目指している。SBXの特性として、親の近くに子が生成
-#        されやすく、探索空間全体に広がる
-#        """
-#        if np.random.random() < self.crossover_rate:
-#            child1 = parent1.copy()
-#            child2 = parent2.copy()
-#            for i in range(self.num_variables):
-#                if np.random.random() < 0.5:
-#                    child1.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
-#                                                 * parent1.variables[i]
-#                                                 + (1 - self.distribution_index_crossover)
-#                                                 * parent2.variables[i])
-#
-#                    child2.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
-#                                                 * parent1.variables[i]
-#                                                 + (1 + self.distribution_index_crossover)
-#                                                 * parent2.variables[i])
-#                else:
-#                    child1.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
-#                                                 * parent1.variables[i]
-#                                                 + (1 + self.distribution_index_crossover)
-#                                                 * parent2.variables[i])
-#
-#                    child2.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
-#                                                 * parent1.variables[i]
-#                                                 + (1 - self.distribution_index_crossover)
-#                                                 * parent2.variables[i])
-#
-#                child1.variables[i] = min(max(child1.variables[i], self.variable_range[0]),
-#                                          self.variable_range[1])
-#                child2.variables[i] = min(max(child2.variables[i], self.variable_range[0]),
-#                                          self.variable_range[1])
-#            return child1, child2
-#
-#        else:
-#            return parent1.copy(), parent2.copy()
-
     def mutation(self, individual):
         """
         Polynomial mutationを採用している。
@@ -213,46 +219,61 @@ class NSGA2:
                                               self.variable_range[1])
         return individual
 
+    def plot_population(self, generation):
+        pareto_front = np.array([ind.objectives for ind in self.population])
+        numofdata = len(pareto_front)
+
+        plt.scatter(pareto_front[:, 0], pareto_front[:, 1],
+                    label=f'Generation {generation+1}, {numofdata}')
+        plt.xlim(0, 5)
+        plt.ylim(0, 5)
+        plt.legend()
+        plt.show()
+
+    def print_summary(self, generation):
+        pareto_front = np.array([ind.objectives for ind in self.population])
+        min_values = np.min(pareto_front, axis=0)
+        max_values = np.max(pareto_front, axis=0)
+        avg_values = np.mean(pareto_front, axis=0)
+
+        #print(f"Generation: {generation + 1}")
+        print(f"{generation+1}, {min_values}, {max_values}, {avg_values}")
+        #print(f"max objectives: {max_values}")
+        #print(f"avg objectives: {avg_values}")
+        #print()
+
     def evolve(self):
         self.initialize_population()
         all_fronts = []
 
-        for _ in range(self.num_generations):
+        for generation in range(self.num_generations):
             self.evaluate_objectives()
             fronts = self.fast_nondominated_sort()
+
             for front in fronts:
                 self.calculate_crowding_distance(front)
-            self.population = self.selection()
-            all_fronts.append(self.population[:])
+
+            #if (generation + 1) % 10 == 0:
+            #    self.plot_population(generation)
+            #self.population = self.selection()
+            #all_fronts.append(self.population[:])
+
             offspring = []
             for _ in range(self.population_size // 2):
-                parent1, parent2 = np.random.choice(self.population, size=2)
+                parent1 = self.crowding_distance_tournament_selection()
+                parent2 = self.crowding_distance_tournament_selection()
+                #parent1 = random.choice(self.selection())
+                #parent2 = random.choice(self.selection())
+                #parent1, parent2 = np.random.choice(self.population, size=2)
                 child1, child2 = self.crossover(parent1, parent2)
                 child1 = self.mutation(child1)
                 child2 = self.mutation(child2)
                 offspring.append(child1)
                 offspring.append(child2)
             self.population = offspring
+            self.print_summary(generation)
         return all_fronts
 
-
-class Individual:
-    def __init__(self,
-                 variables,
-                 rank=float('inf'),
-                 crowding_distance=0,
-                 domination_count=0,
-                 dominated_solutions=set()):
-
-        self.variables = variables
-        self.rank = rank
-        self.crowding_distance = crowding_distance
-        self.domination_count = domination_count
-        self.dominated_solutions = dominated_solutions
-        self.objectives = [0, 0]
-
-    def copy(self):
-        return copy.copy(self)
 
 
 class ZDT1(NSGA2):
@@ -285,14 +306,18 @@ if __name__ == '__main__':
     all_fronts = zdt1.evolve()
 
     colors = cm.rainbow(np.linspace(0, 1, len(all_fronts)))
-    for front, color in zip(all_fronts, colors):
+    for i, front in enumerate(all_fronts):
         pareto_front = np.array([ind.objectives for ind in front])
-        plt.scatter(pareto_front[:, 0], pareto_front[:, 1], color=color)
+        plt.scatter(pareto_front[:, 0], pareto_front[:, 1],
+                    color=colors[i], label=f'Generation {i+1}')
 
-    #pareto_front = np.array([ind.objectives for ind in zdt1.population])
-    #print(pareto_front)
+    pareto_front = np.array([ind.objectives for ind in zdt1.population])
+    print(pareto_front)
 
     plt.xlabel('Objective 1')
     plt.ylabel('Objective 2')
+    plt.xlim(0,2)
+    plt.ylim(0,10)
     plt.title('Pareto Front')
+    plt.legend()
     plt.show()
