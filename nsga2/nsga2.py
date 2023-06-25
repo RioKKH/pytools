@@ -6,6 +6,7 @@ import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 
 class NSGA2:
@@ -110,36 +111,96 @@ class NSGA2:
             child2 = parent2.copy()
             for i in range(self.num_variables):
                 if np.random.random() < 0.5:
-                    child1.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
-                                                 * parent1.variables[i]
-                                                 + (1 - self.distribution_index_crossover)
-                                                 * parent2.variables[i])
+                    x1 = parent1.variables[i]
+                    x2 = parent2.variables[i]
+                    xl = self.variable_range[0]
+                    xu = self.variable_range[1]
+                    if abs(x1 - x2) > 1e-14:
+                        beta = 1.0 + (2.0 * min((x1 - xl), (xu - x1)) / (x2 - x1))
+                        alpha = 2.0 - beta**-(self.distribution_index_crossover + 1)
+                        print(alpha)
+                        u = np.random.random()
+                        if alpha != 0:
+                            if u <= 1.0 / alpha:
+                                beta_q = (u * alpha)**(1.0 / (self.distribution_index_crossover + 1))
+                            else:
+                                beta_q = (1.0 / (2.0 - u * alpha))**(1.0 / (self.distribution_index_crossover + 1))
+                        else:
+                            beta_q = 0
+                        child1.variables[i] = 0.5*(x1 + x2) - 0.5*beta_q*abs(x2 - x1)
 
-                    child2.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
-                                                 * parent1.variables[i]
-                                                 + (1 + self.distribution_index_crossover)
-                                                 * parent2.variables[i])
-                else:
-                    child1.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
-                                                 * parent1.variables[i]
-                                                 + (1 + self.distribution_index_crossover)
-                                                 * parent2.variables[i])
+                        beta = 1.0 + (2.0 * min((x2 - x1), (xu - x2)) / (x2 - x1))
+                        alpha = 2.0 - beta**-(self.distribution_index_crossover + 1)
+                        if alpha != 0:
+                            if u <= 1.0 / alpha:
+                                beta_q = (u * alpha)**(1.0 / (self.distribution_index_crossover + 1))
+                            else:
+                                beta_q = (1.0 / (2.0 - u * alpha))**(1.0 / (self.distribution_index_crossover + 1))
+                        else:
+                            beta_q = 0
+                        child2.variables[i] = 0.5*(x1 + x2) + 0.5*beta_q*abs(x2 - x1)
+                    else:
+                        child1.variables[i] = x1
+                        child2.variables[i] = x2
 
-                    child2.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
-                                                 * parent1.variables[i]
-                                                 + (1 - self.distribution_index_crossover)
-                                                 * parent2.variables[i])
-
-                child1.variables[i] = min(max(child1.variables[i], self.variable_range[0]),
-                                          self.variable_range[1])
-                child2.variables[i] = min(max(child2.variables[i], self.variable_range[0]),
-                                          self.variable_range[1])
+                    child1.variables[i] = min(max(child1.variables[i], self.variable_range[0]),
+                                              self.variable_range[1])
+                    child2.variables[i] = min(max(child2.variables[i], self.variable_range[0]),
+                                              self.variable_range[1])
             return child1, child2
 
         else:
             return parent1.copy(), parent2.copy()
 
+
+#    def crossover(self, parent1, parent2):
+#        """
+#        Simulated Binary Crossover, SBXを採用。SBXは2つの親から2つの子を生成する。
+#        子の生成には、親の値と一様乱数を用いた計算が行われる。この計算は親の間で
+#        子の値を分布させることを目指している。SBXの特性として、親の近くに子が生成
+#        されやすく、探索空間全体に広がる
+#        """
+#        if np.random.random() < self.crossover_rate:
+#            child1 = parent1.copy()
+#            child2 = parent2.copy()
+#            for i in range(self.num_variables):
+#                if np.random.random() < 0.5:
+#                    child1.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
+#                                                 * parent1.variables[i]
+#                                                 + (1 - self.distribution_index_crossover)
+#                                                 * parent2.variables[i])
+#
+#                    child2.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
+#                                                 * parent1.variables[i]
+#                                                 + (1 + self.distribution_index_crossover)
+#                                                 * parent2.variables[i])
+#                else:
+#                    child1.variables[i] = 0.5 * ((1 - self.distribution_index_crossover)
+#                                                 * parent1.variables[i]
+#                                                 + (1 + self.distribution_index_crossover)
+#                                                 * parent2.variables[i])
+#
+#                    child2.variables[i] = 0.5 * ((1 + self.distribution_index_crossover)
+#                                                 * parent1.variables[i]
+#                                                 + (1 - self.distribution_index_crossover)
+#                                                 * parent2.variables[i])
+#
+#                child1.variables[i] = min(max(child1.variables[i], self.variable_range[0]),
+#                                          self.variable_range[1])
+#                child2.variables[i] = min(max(child2.variables[i], self.variable_range[0]),
+#                                          self.variable_range[1])
+#            return child1, child2
+#
+#        else:
+#            return parent1.copy(), parent2.copy()
+
     def mutation(self, individual):
+        """
+        Polynomial mutationを採用している。
+        この突然変異では、各変数は一定の確率で変異する。変異が発生した場合、
+        新たな値は一様乱数と特定の計算を用いて生成される。この計算は元の値の
+        近くにう新な値を生成することを目指している。
+        """
         for i in range(self.num_variables):
             if np.random.random() < self.mutation_rate:
                 u = np.random.random()
@@ -154,9 +215,7 @@ class NSGA2:
 
     def evolve(self):
         self.initialize_population()
-        varini = np.array([ind.variables for ind in zdt1.population])
-        parini = np.array([ind.objectives for ind in zdt1.population])
-        print(varini)
+        all_fronts = []
 
         for _ in range(self.num_generations):
             self.evaluate_objectives()
@@ -164,6 +223,7 @@ class NSGA2:
             for front in fronts:
                 self.calculate_crowding_distance(front)
             self.population = self.selection()
+            all_fronts.append(self.population[:])
             offspring = []
             for _ in range(self.population_size // 2):
                 parent1, parent2 = np.random.choice(self.population, size=2)
@@ -173,6 +233,7 @@ class NSGA2:
                 offspring.append(child1)
                 offspring.append(child2)
             self.population = offspring
+        return all_fronts
 
 
 class Individual:
@@ -214,19 +275,23 @@ if __name__ == '__main__':
     zdt1 = ZDT1(population_size=100,
                 num_generations=100,
                 num_objectives=2,
-                num_variables=30,
+                num_variables=10,
                 variable_range=(0, 1),
                 mutation_rate=0.01,
                 crossover_rate=0.9,
-                distribution_index_crossover=20,
+                distribution_index_crossover=15,
                 distribution_index_mutation=20)
 
-    zdt1.evolve()
+    all_fronts = zdt1.evolve()
 
-    pareto_front = np.array([ind.objectives for ind in zdt1.population])
-    print(pareto_front)
+    colors = cm.rainbow(np.linspace(0, 1, len(all_fronts)))
+    for front, color in zip(all_fronts, colors):
+        pareto_front = np.array([ind.objectives for ind in front])
+        plt.scatter(pareto_front[:, 0], pareto_front[:, 1], color=color)
 
-    plt.scatter(pareto_front[:, 0], pareto_front[:, 1])
+    #pareto_front = np.array([ind.objectives for ind in zdt1.population])
+    #print(pareto_front)
+
     plt.xlabel('Objective 1')
     plt.ylabel('Objective 2')
     plt.title('Pareto Front')
