@@ -3,6 +3,7 @@
 
 import numpy as np
 from scipy.optimize import minimize
+from sklearn.cluster import KMeans
 
 
 # RBF関数
@@ -14,41 +15,50 @@ def rbf(x, c, s):
 class RBFNet:
 
     def __init__(self, k=2, lr=0.01, epochs=100, rbf=rbf, inferStds=True):
-        self.k = k
-        self.lr = lr
-        self.epochs = epochs
-        self.rbf = rbf
-        self.inferStds = inferStds
+        self.k = k                  # number of RBF centers
+        self.lr = lr                # learning rate
+        self.epochs = epochs        # number of training epochs
+        self.rbf = rbf              # RBF function
+        self.inferStds = inferStds  # whether to infer standard deviations
 
-        self.w = np.random.randn(k)
-        self.b = np.random.randn(1)
-        self.centers = None
-        self.stds = None
+        self.w = np.random.randn(k) # weights
+        self.b = np.random.randn(1) # bias
+        self.centers = None         # centers
+        self.stds = None            # standard deviations
 
     def fit(self, X, y):
-        # RBFネットワークの中心と標準偏差はk-means法を用いて決定している。
-        if self.inferStds:
-            self.centers, self.stds = kmeans(X, self.k)
-        else:
-            self.centers, _ = kmeans(X, self.k)
-            dMax = max([np.abs(c1 - c2) for c1 in self.centers for c2 in self.centers])
-            self.stds = np.repeat(dMax / np.sqrt(2 * self.k), self.k)
+        # Use k-means to determine the clusters
+        kmeans = KMeans(n_clusters=self.k)
+        kmeans.fit(X)
+        self.centers = kmeans.cluster_centers_
 
+        if self.inferStds:
+            # Infer standard deviations from the data
+            dists = np.array([np.abs(c1 - c2)
+                              for c1 in self.centers for c2 in self.centers])
+            dMax = np.max(dists)
+            self.stds = np.repeat(dMax / np.sqrt(2 * self.k), self.k)
+        else:
+            # Use a fixed standard deviation
+            self.stds = np.repeat(1.0, self.k)
+
+        # Training
         # 重みの学習
         # 重みは勾配降下法を用いて学習している
         for epoch in range(self.epochs):
             for i in range(X.shape[0]):
-                # フォワードパス
+                # Forward pass
                 a = np.array([self.rbf(X[i], c, s)
                               for c, s, in zip(self.centers, self.stds)])
                 F = a.T.dot(self.w) + self.b
 
-                loss = (y[i] - F).flatten() ** 2
-                print('Loss: {loss[0]:.2f}')
+                #loss = (y[i] - F).flatten() ** 2
+                #print('Loss: {loss[0]:.2f}')
 
-                # バックワードパス
+                # Backward pass
                 error = -(y[i] - F).flatten()
 
+                # Update weights and bias
                 # 重みの更新
                 self.w = self.w - self.lr * a * error
                 self.b = self.b - self.lr * error
