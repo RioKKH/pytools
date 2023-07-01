@@ -70,3 +70,4 @@ class RBFNet:
             F = a.T.dot(self.w) + self.b
             y_pred.append(F)
         return np.array(y_pred)
+
