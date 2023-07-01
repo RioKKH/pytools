@@ -14,6 +14,7 @@ rbf_net = RBFNet(k=2, lr=0.01, epochs=100)
 
 # データの生成
 X = np.linspace(-5, 5, 100).reshape(-1, 1)
+print(np.shape(X))
 y = objective_function(X)
 
 # RBFネットワークの学習
@@ -21,8 +22,10 @@ rbf_net.fit(X, y)
 
 # 大域的最適化
 bounds = [(-5, 5)]
-result = differential_evolution(lambda x: rbf_net.predict(np.array([x])), bounds)
+#result = differential_evolution(lambda x: rbf_net.predict(np.array([x])), bounds)
+print(rbf_net.predict(np.array[3]))
+#result = differential_evolution(lambda x: rbf_net.predict(np.array([x])), bounds)
 
 # 最適解の表示
-print(f"Global minimum: x = {result.x[0]:.3f}, y = {result.y[0]:.3f}")
+#print(f"Global minimum: x = {result.x[0]:.3f}, y = {result.y[0]:.3f}")
 

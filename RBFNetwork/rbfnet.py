@@ -3,6 +3,7 @@
 
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import differential_evolution
 from sklearn.cluster import KMeans
 
 
@@ -70,4 +71,27 @@ class RBFNet:
             F = a.T.dot(self.w) + self.b
             y_pred.append(F)
         return np.array(y_pred)
+
+
+def f(x):
+    return x[0]**2 + x[1]**2
+
+
+# RBFネットワークの初期化
+rbf_net = RBFNet(k=2, lr=0.01, epochs=100)
+
+# データの生成
+X = np.linspace(-5, 5, 100).reshape(-1, 1)
+y = f(X)
+
+# RBFネットワークの学習
+rbf_net.fit(X, y)
+
+# 遺伝的アルゴリズムで最適化
+bounds = [(-5, 5)]
+result = differential_evolution(lambda x: rbf_net.predict(np.array([x].reshape(-1, 2))), bounds)
+#result = differential_evolution(lambda x: rbf_net.predict(np.array([x])), bounds)
+
+# 最適解の表示
+print(f"Global minimum: x = {result.x[0]:.3f}")
 
