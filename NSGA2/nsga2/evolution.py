@@ -8,15 +8,29 @@ from nsga2.population import Population
 
 
 class Evolution:
+    """
+    This class manages the evolutionary process of the NSGA-II algorithm.
+    """
 
     def __init__(self,
-                 problem,
-                 num_of_generations=1000,
-                 num_of_individuals=100,
-                 num_of_tour_particips=2,
-                 tournament_prob=0.9,
-                 crossover_param=2,
-                 mutation_param=5):
+                 problem,                 # 最適化する問題
+                 num_of_generations=1000, # アルゴリズムが進化する世代の数
+                 num_of_individuals=100,  # 各世代の個体数
+                 num_of_tour_particips=2, # トーナメント選択に参加する個体の数
+                 tournament_prob=0.9,     # トーナメント選択の確率
+                 crossover_param=2,       # 交叉操作のパラメータ
+                 mutation_param=5):       # 突然変異操作のパラメータ
+        """
+        Initialize an instance of the Evolution class.
+
+        :param problem:               The problem to optimize.
+        :param num_of_generations:    The number of generations the algorithm will evolve.
+        :param num_of_individuals:    The number of individuals (solutions) in each generation.
+        :param num_of_tour_particips: The number of participants in tournament selection.
+        :param tournament_prob:       The probability used in tournament selection.
+        :param crossover_param:       The parameter used in crossover operation.
+        :param mutation_param:        The parameter used in mutation operation. 
+        """
 
         self.utils = NSGA2Utils(problem,
                                 num_of_individuals,
@@ -31,12 +45,26 @@ class Evolution:
         self.num_of_individuals = num_of_individuals
 
     def evolve(self):
+        """
+        Executes the evolutionary process of the NSGA-II algorithm.
+        It generates an initial population, calculates the non-dominated fronts
+        and the crowding distance for each front, and generates a new population
+        of children. 
+        This process is repeated until the specified number of generations 
+        has passed.
+        
+        :return: The final population (set of solutions).
+        """
+        # Create initial population
         self.population = self.utils.create_initial_population()
+        # Calculate non-dominated fronts
         self.utils.fast_nondominated_sort(self.population)
 
+        # Calculate crowding distance for each front
         for front in self.population.fronts:
             self.utils.calculate_crowding_distance(front)
 
+        # Create new population of children
         children = self.utils.create_children(self.population)
         returned_population = None
 
