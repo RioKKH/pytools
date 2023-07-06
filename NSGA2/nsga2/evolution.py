@@ -70,30 +70,38 @@ class Evolution:
 
         # Evolution process
         for i in tqdm(range(self.num_of_generations)):
+            # Combine current population and children
             self.population.extend(children)
+            # Calculate non-dominated fronts
             self.utils.fast_nondominated_sort(self.population)
+            # Create a new population
             new_population = Population()
             front_num = 0
 
+            # Add individuals to the new population based on non-domination
+            # and crowing distance
             while len(new_population) + len(self.population.fronts[front_num]) \
                     <= self.num_of_individuals:
                 self.utils.calculate_crowding_distance(self.population.fronts[front_num])
                 new_population.extend(self.population.fronts[front_num])
                 front_num += 1
 
+            # Sort individuals in the last front based on crowding distance
             self.utils.calculate_crowding_distance(self.population.fronts[front_num])
             self.population.fronts[front_num].sort(
                 key=lambda individual: individual.crowding_distance, reverse=True)
+            # Add individuals from the last front to the new population
             new_population.extend(
                 self.population.fronts[front_num][0:self.num_of_individuals\
                                                   - len(new_population)])
-            returned_population = self.population
+            # Update current population
             self.population = new_population
+            # Calculate non-dominated fronts and croding distance for the new population
             self.utils.fast_nondominated_sort(self.population)
-
             for front in self.population.fronts:
                 self.utils.calculate_crowding_distance(front)
 
+            # Create a new population of children
             children = self.utils.create_children(self.population)
 
-        return returned_population.fronts[0]
+        return self.population.fronts[0]
