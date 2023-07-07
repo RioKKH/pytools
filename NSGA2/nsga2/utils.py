@@ -60,25 +60,38 @@ class NSGA2Utils:
         domination count and dominated solutions for each individual, and
         assigns them to different fronts based on their domination count.
         """
+        # Initialize the first front
         population.fronts = [[]]
+
         for individual in population:
+            # For each individual in the population, initialize the domination
+            # count to 0 and the set of dominated solutions to empty.
             individual.domination_count = 0
             individual.dominated_solutions = []
+
             for other_individual in population:
+                # For each pair of individuals, if one dominates the other,
+                # update their domination count and dominated solutions.
                 if individual.dominates(other_individual):
                     individual.dominated_solutions.append(other_individual)
                 elif other_individual.dominates(individual):
                     individual.domination_count += 1
+
+            # If an individual is not dominated by any other, it belongs to their
+            # first front.
             if individual.domination_count == 0:
                 individual.rank = 0
                 population.fronts[0].append(individual)
 
+        # Generate the rest of the fronts.
         i = 0
         while len(population.fronts[i]) > 0:
             temp = []
             for individual in population.fronts[i]:
                 for other_individual in individual.dominated_solutions:
                     other_individual.domination_count -= 1
+                    # If an individual is dominated by exactly i individuals,
+                    # it belongs to the i-th front.
                     if other_individual.domination_count == 0:
                         other_individual.rank = i + 1
                         temp.append(other_individual)
@@ -120,6 +133,8 @@ class NSGA2Utils:
 
         :return: 1 if the first individual is better, -1 otherwise.
         """
+        # If the first individual's  rank is lower or (the ranks are equal and
+        # the first individual's crowding distance is larger)
         if (individual.rank < other_individual.rank) or \
                 ((individual.rank == other_individual.rank) and (
                     individual.crowding_distance > other_individual.crowding_distance)):

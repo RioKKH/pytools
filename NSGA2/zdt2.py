@@ -14,22 +14,21 @@ from nsga2.problem import Problem
 from nsga2.evolution import Evolution
 
 
-class ZDT1(ZDTBase):
-    # ZDT1の目的関数1
+class ZDT2(ZDTBase):
+    # ZDT2の目的関数1
     def f1(self, x):
         return x[0]
 
-    # ZDT1の目的関数2
+    # ZDT2の目的関数2
     def f2(self, x):
         num = len(x)
         g = 1 + 9.0 * np.sum(x[1:]) / (num - 1)
-        h = 1 - np.sqrt(self.f1(x) / g)
-        #h = 1 - np.sqrt(x[0] / g)
+        h = 1 - np.power(self.f1(x) / g, 2)
         return g * h
 
     def pareto_optimal_front(self):
         x = np.linspace(0, 1, 100)
-        y = 1 - np.sqrt(x)
+        y = 1 - np.power(x, 2)
         return x, y
 
 
@@ -38,7 +37,7 @@ class InvalidOptionError(Exception):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description = "ZDT1")
+    parser = argparse.ArgumentParser(description = "ZDT2")
     parser.add_argument('-r', '--run',  action="store_true", default=False)
     parser.add_argument('-p', '--plot', action="store_true", default=False)
     parser.add_argument('-f', '--file', type=str)
@@ -46,16 +45,15 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    zdt1 = ZDT1()
+    zdt2 = ZDT2()
     try:
         if args.run and args.file:
-            zdt1.run_evolution()
-            zdt1.save(args.file)
+            zdt2.run_evolution()
+            zdt2.save(args.file)
 
         if args.plot and args.file and args.gen:
-            zdt1.load(args.file)
-            #x, y = zdt1.pareto_optimal_front()
-            zdt1.plot(args.gen)
+            zdt2.load(args.file)
+            zdt2.plot(args.gen)
             #raise InvalidOptionError("--option given is invalid.")
 
     except InvalidOptionError as e:

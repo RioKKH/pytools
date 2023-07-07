@@ -66,7 +66,8 @@ class Evolution:
 
         # Create new population of children
         children = self.utils.create_children(self.population)
-        returned_population = None
+        # 各世代の最良フロントを保存するリスト
+        best_fronts = []
 
         # Evolution process
         for i in tqdm(range(self.num_of_generations)):
@@ -94,14 +95,20 @@ class Evolution:
             new_population.extend(
                 self.population.fronts[front_num][0:self.num_of_individuals\
                                                   - len(new_population)])
+
+            # Add best individuals beloing to the best front to the list
+            best_fronts.append(self.population.fronts[0])
+
             # Update current population
             self.population = new_population
             # Calculate non-dominated fronts and croding distance for the new population
             self.utils.fast_nondominated_sort(self.population)
+
             for front in self.population.fronts:
                 self.utils.calculate_crowding_distance(front)
 
             # Create a new population of children
             children = self.utils.create_children(self.population)
 
-        return self.population.fronts[0]
+        return best_fronts
+        # return self.population.fronts[0]
