@@ -187,8 +187,10 @@ class NSGA2Utils:
 
     def __get_beta(self):
         """
-        Performes mutation operation on a child. The features of the child are
-        randomly changed to introduce diversity in the population.
+        Calculates the beta value used in the crossover operation.
+        The beta value determines how much influence each parent has on the child.
+
+        :return: The beta value.
         """
         u = random.random()
         if u <= 0.5:

@@ -24,7 +24,6 @@ class ZDT1(ZDTBase):
         num = len(x)
         g = 1 + 9.0 * np.sum(x[1:]) / (num - 1)
         h = 1 - np.sqrt(self.f1(x) / g)
-        #h = 1 - np.sqrt(x[0] / g)
         return g * h
 
     def pareto_optimal_front(self):

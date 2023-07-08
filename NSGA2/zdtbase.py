@@ -53,7 +53,12 @@ class ZDTBase(ABC):
         with open(filename, 'rb') as f:
             self.best_fronts = pickle.load(f)
 
-    def plot(self, generation):
+    def plot(self, generation, 
+             xmin=-0.2, xmax=1.2,
+             ymin=-0.2, ymax=1.2,
+             xticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+             yticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0]):
+
         # 指定された世代の最良のフロントを取得
         best_front = self.best_fronts[generation]
         func = [i.objectives for i in best_front]
@@ -68,9 +73,9 @@ class ZDTBase(ABC):
         plt.ylabel('Function 2', fontsize=15)
         plt.scatter(function1, function2)
         plt.plot(x, y, color='tab:orange')
-        plt.xlim(-0.2, 1.2)
-        plt.ylim(-0.2, 1.2)
-        plt.xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-        plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
+        plt.xticks(xticks)
+        plt.yticks(yticks)
         plt.grid(ls='dashed', color='gray', alpha=0.3)
         plt.show()
