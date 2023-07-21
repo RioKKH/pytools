@@ -21,19 +21,24 @@ class CLAFIC:
         # Compute covariance matrix
         C = np.cov(X_centered.T)
         # Compute eigenvalues and eigenvectors of the covariance matrix
-        U, S, Vt = svd(C)
+        #eigvals, S, Vt = svd(C)
+        # Compute eivenvalues and eigenvectors of the covariance matrix
+        eigvals, eigvecs = np.linalg.eigh(C)
+        # Sort eigenvalues and eigenvectors in descending order
+        idx = np.argsort(eigvals)[::-1]
+        eigvals = eigvals[idx]
+        eigvecs = eigvecs[:, idx]
         # Select top n_components eigenvectors
-        V = Vt.T[:, :self.n_components]
-        # Return the mean and principal components
-        return X_mean, V
+        #V = Vt.T[:, :self.n_components]
+        V = eigvecs[:, :self.n_components]
+        # Return the mean and principal components and their eigenvalues
+        return X_mean, V, eigvals[:self.n_components]
 
     def fit(self, X, y):
         """
         各クラスのデータに対してKL展開を実行し、その結果
-        (平均と主成分)を保存する。
+        (平均と主成分, 固有値)を保存する。
         """
-        self.X_train = X
-        self.y_train = y
         self.classes = np.unique(y)
         for i in self.classes:
             X_i = X[y == i]
@@ -52,7 +57,7 @@ class CLAFIC:
         射影は、データ点を部分空間の基底ベクトルに直交射影した後、平均を
         加える事で実現される。
         """
-        X_mean, V = model
+        X_mean, V, _ = model
         X_centered = x - X_mean
         x_projected = X_mean + V @ (V.T @ X_centered)
         return x_projected
