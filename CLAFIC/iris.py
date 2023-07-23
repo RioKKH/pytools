@@ -135,7 +135,7 @@ def main(showdata=False) -> pd.DataFrame:
     plt.show()
 
     # Plot cumulative explained variance for each class
-    model.train(4)
+    model.train(1)
     model.plot_cumulative_explained_variance()
 
     #model.plot_eigenvalues()
