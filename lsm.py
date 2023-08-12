@@ -8,7 +8,8 @@ import pandas as pd
 
 
 def load_data(fname):
-    return pd.read_csv(fname, index_col=0, comment='#')
+    return pd.read_csv(fname, comment='#')
+    #return pd.read_csv(fname, index_col=0, comment='#')
 
 def make_matrix(df):
     a6x = df.a6x.values
@@ -94,7 +95,7 @@ def plot(df, a, b, xmin=-25, xmax=25, ymin=-25, ymax=25):
     Y = df.a6y.unique()
     fig, ax = plt.subplots()
 
-    df.plot(x='real', y='imag', 
+    df.plot(x='x', y='y', 
             ls='', marker='o', alpha=0.8, ax=ax)
             #ls='', marker='o', color='royalblue', alpha=0.8, ax=ax)
 
@@ -103,7 +104,7 @@ def plot(df, a, b, xmin=-25, xmax=25, ymin=-25, ymax=25):
         xt[:] = xi
         yt = np.linspace(-30, 30, length)
         xx, yy = calc_fit_data(a, b, xt, yt)
-        ax.plot(xx, yy, marker='', ls='-.',  lw=1, alpha=1.0, label='TTc')
+        ax.plot(xx, yy, marker='', ls='-.',  lw=1, alpha=1.0, label='target')
         #ax.plot(xx, yy, marker='', ls='-.',  lw=1, alpha=1.0, color='darkorange')
 
     for yi in Y:
@@ -124,7 +125,7 @@ def plot(df, a, b, xmin=-25, xmax=25, ymin=-25, ymax=25):
     ax.set_ylabel('Imaginary')
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
-    plt.savefig('a6_optimum.png', dpi=150, bbox_inches='tight')
+    plt.savefig('optimum.png', dpi=150, bbox_inches='tight')
 
     #plt.show()
 
