@@ -185,6 +185,49 @@ class NSGA2Utils:
             child2.features[i] = x1 - beta * x2
         return child1, child2
 
+    def __simulated_binary_crossover(
+        self,
+        individual1: Individual, 
+        individual2: Individual) -> tuple[Individual, Individual]:
+        """
+        Simulated binary crossover(SBX)を行うメソッドです。
+
+        Parameters:
+            individual1 (Individual) : 親1
+            individual2 (Individual) : 親2
+
+        Returns:
+            tupele:
+                child1 (Individual) : 子1
+                child2 (Individual) : 子2
+        """
+        child1 = self.problem.generate_individual()
+        child2 = self.problem.generate_individual()
+        num_of_featrues = len(child1.features)
+        genes_indexes = range(num_of_features)
+        for i in genes_indexes:
+            beta = self.__get_beta()
+            x1 = (individual1.features[i] + individual2.features[i]) / 2
+            x2 = abs((individual1.features[i] - individual2.features[i]) / 2)
+            child1.features[i] = x1 + beta * x2
+            child2.features[i] = x1 - beta * x2
+        return child1, child2
+
+
+    def __unimodal_normal_distribution_crossover(
+        self,
+        individual1: Individual,
+        individual2: Individual,
+        individual3: Individual,
+        sigma_xi: float = 0.5,
+        sigma_eta: float = 0.35) -> tuple[Individual, Individual]:
+        """
+        Unimodal normal distribution crossover (UNDX)を行うメソッドです。
+        親として3個体を引数として受け取り、2つの子個体を生成します。
+        """
+
+
+
     def __get_beta(self):
         """
         Calculates the beta value used in the crossover operation.
