@@ -3,6 +3,7 @@
 
 import random
 
+import numpy as np
 from nsga2.population import Population
 from nsga2.individual import Individual
 
@@ -216,15 +217,115 @@ class NSGA2Utils:
 
     def __unimodal_normal_distribution_crossover(
         self,
-        individual1: Individual,
-        individual2: Individual,
-        individual3: Individual,
+        parent1: Individual,
+        parent2: Individual,
+        parent3: Individual,
         sigma_xi: float = 0.5,
         sigma_eta: float = 0.35) -> tuple[Individual, Individual]:
-        """
+
+        """UNDX
+
         Unimodal normal distribution crossover (UNDX)を行うメソッドです。
         親として3個体を引数として受け取り、2つの子個体を生成します。
+
+        Parameters
+        ----------
+            parent1 : Individual
+                親1
+            parent2 : Individual
+                親2
+            parent3 : Individual
+                親3
+            sigma_xi : float
+                正規分布の標準偏差
+            sigma_eta : float
+                正規分布の標準偏差
+
+        Returns
+        -------
+            child1 : Individual
+                parent1, 2, 3から生成された子個体1
+            child2 : Individual
+                parent1, 2, 3から生成された子個体1
         """
+        # 2親個体の中点を計算する
+        middle_of_parents = (parent1 + parent2) / 2
+
+        # 2親個体を結ぶベクトルを計算する
+        d1 = parent1 - parent2
+
+        # 3番目の親個体と中点との差分ベクトルを計算する
+        d2 = parent3 - middle_of_parents
+
+        # d1を正規化する
+        d1_norm = d1 / np.linalg.norm(d1)
+
+        # d2からd1方向成分を取り除く
+        d2 -= np.dot(d2, d1_norm) * d1_norm
+
+        # 子個体を2つ生成する
+        child1 = m \
+            + np.random.normal1(0, sigma_xi) * d / 2 \
+            + np.random.normal(0, sigma_eta) * d2
+        child2 = m \
+            - np.random.normal1(0, sigma_xi) * d / 2 \
+            + np.random.normal(0, sigma_eta) * d2
+
+        return child1, child2
+
+
+    def __blend_crossover_alpha(
+        self,
+        parent1: Individual,
+        parent2: Individual,
+        alpha: float = 0.5) -> tuple[Individual, Individual]:
+        """ BLX-alpha
+
+        Blend Crossover (BLX-alpha)を行うメソッドです。
+
+        Parameters
+        ----------
+        parent1 : Individual
+        parent2 : Individual
+
+        Returns
+        -------
+        child1 : Individual
+            parent1とparent2から生成された子個体1
+        child2 : Individual
+            parent1とparent2から生成された子個体2
+        """
+        child1 = np.empty_like(parent1)
+        child2 = np.empty_like(parent2)
+
+        for i in range(len(parent1)):
+            d = np.abs(parent1[i] - parent2[i])
+            lower_bound = np.min(parent1[i], parent2[i]) - alpha * d
+            upper_bound = np.max(parent1[i], parent2[i]) + alpha * d
+            child1[i] = np.random.uniform(lower_bound, upper_bound)
+            child2[i] = np.random.uniform(lower_bound, upper_bound)
+
+        return child1, child2
+
+
+    def __simplex_crossover(
+        self,
+        parents: list(Individual),
+        epsilon: float) -> tuple[Individual, Individual]:
+        """SPX
+
+        Simplex crossoverを行うメソッドです。
+
+        Parameters
+        ----------
+        parents : list(Individual)
+        epsilon : float
+            拡大率
+
+        Returns
+        -------
+        """
+        pass
 
 
 
