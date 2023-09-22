@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import joblib
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -40,6 +42,16 @@ class RandomForestModel(BaseModel):
         self.X_train, self.X_test, self.y_train, self.y_test =\
             train_test_split(X, y, test_size=0.2, random_state=42)
 
+    def save_model(self, filepath:str) -> None:
+        """ランダムフォレストクラス分類器の評価結果を保存する"""
+        print(f"Saving model to: {filepath}")
+        joblib.dump(self.model, filepath)
+
+    def load_model(self, filepath:str) -> None:
+        """ランダムフォレストクラス分類器の評価結果を読み込む"""
+        print(f"Loading model from: {filepath}")
+        self.model = joblib.load(filepath)
+
     def preprocess_data(self):
         """RandomForestでは特に前処理は行わない"""
         pass
@@ -48,7 +60,7 @@ class RandomForestModel(BaseModel):
         """ランダムフォレオストクラス分類器のインスタンスを作成する"""
         self.model = RandomForestClassifier(n_estimators=100, 
                                             random_state=42,
-                                            verbose=2)
+                                            verbose=1)
 
     def train_model(self):
         """ランダムフォレストクラス分類器を訓練する"""
@@ -59,10 +71,6 @@ class RandomForestModel(BaseModel):
         self.y_pred = self.model.predict(self.X_test)
         self.accuracy = accuracy_score(self.y_test, self.y_pred)
         print(f"Test Accuracy: {self.accuracy}")
-
-    def save_results(self):
-        """ランダムフォレストクラス分類器の評価結果を保存する"""
-        pass
 
     def plot_images(self, num_images=5):
         """ランダムに画像を選択してプロットする"""
@@ -84,14 +92,26 @@ class RandomForestModel(BaseModel):
         # クラスラベル
         class_labels = np.unique(self.y_test.astype(int))
 
+        plt.figure(figsize=(12, 5))
+
         # 正答率の棒グラフを表示
         plt.subplot(1, 2, 1)
-        plt.bar(class_labels, class_accuracy)
+        bars = plt.bar(class_labels, class_accuracy)
         plt.xlabel('Class label')
         plt.ylabel('Accuracy')
         plt.title('Class-wise accuracy of mnist dataset')
         plt.xticks(class_labels)
         plt.ylim(0, 1)
+
+        # 各バーに対応する数値を表示
+        for bar, acc in zip(bars, class_accuracy):
+            plt.text(bar.get_x() + bar.get_width() / 2,
+                     bar.get_height() - 0.05,
+                     f"{acc:.2f}",
+                     ha='center',
+                     va='top',
+                     color='white',
+                     fontsize=12)
 
         # 混同行列のヒートマップを表示
         plt.subplot(1, 2, 2)
@@ -111,7 +131,8 @@ class RandomForestModel(BaseModel):
         self.build_model()
         self.train_model()
         self.evaluate_model()
-        self.save_results()
+        filepath = "random_forest_model.joblib"
+        self.save_model(filepath)
         self.plot_results()
 
 

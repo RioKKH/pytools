@@ -34,7 +34,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def save_results(self):
+    def save_model(self):
         """モデルや評価結果を保存する"""
         pass
 
