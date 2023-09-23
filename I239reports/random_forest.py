@@ -60,7 +60,7 @@ class RandomForestModel(BaseModel):
         """ランダムフォレオストクラス分類器のインスタンスを作成する"""
         self.model = RandomForestClassifier(n_estimators=100, 
                                             random_state=42,
-                                            verbose=1)
+                                            verbose=2)
 
     def train_model(self):
         """ランダムフォレストクラス分類器を訓練する"""
@@ -75,17 +75,18 @@ class RandomForestModel(BaseModel):
     def plot_images(self, num_images=5):
         """ランダムに画像を選択してプロットする"""
         # ランダムに画像を選択する
-        indices = np.random.choice(np.arange(len(self.X_train),
-                                             num_images,
-                                             replace=False))
-        selected_images = self.X_train[indices]
-        selected_labels = self.y_train[indices]
+        indices = np.random.choice(len(self.X_train),
+                                   num_images,
+                                   replace=False)
+        selected_images = self.X_train.to_numpy()[indices]
+        selected_labels = self.y_train.to_numpy()[indices]
 
         # 選択した画像をプロットする
-        plt.figure(figsize(10, num_images))
-        for i, (img, label) in enumerate(zip(selected_images, seleted_labels)):
+        plt.figure(figsize=(10, num_images))
+        for i, (img, label) in enumerate(zip(selected_images, selected_labels)):
             plt.subplot(1, num_images, i + 1)
-            plt.imshow(img.reshape(28, 28), cmap='gray')
+            plt.imshow(img.reshape(28, 28), cmap='binary')
+            #plt.imshow(img.reshape(28, 28), cmap='gray')
             #plt.xticks([])
             #plt.yticks([])
             plt.axis('off')
