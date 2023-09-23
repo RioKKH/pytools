@@ -82,6 +82,16 @@ class RandomForestModel(BaseModel):
         selected_labels = self.y_train[indices]
 
         # 選択した画像をプロットする
+        plt.figure(figsize(10, num_images))
+        for i, (img, label) in enumerate(zip(selected_images, seleted_labels)):
+            plt.subplot(1, num_images, i + 1)
+            plt.imshow(img.reshape(28, 28), cmap='gray')
+            #plt.xticks([])
+            #plt.yticks([])
+            plt.axis('off')
+            plt.title(f"Label: {label}")
+        plt.tight_layout()
+        plt.show()
 
     def plot_results(self):
         """ランダムフォレストクラス分類器の評価結果をグラフで表示する"""
