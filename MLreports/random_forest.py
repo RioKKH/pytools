@@ -34,13 +34,13 @@ class RandomForestModel(BaseModel):
         # y = cifar10.target
 
         # """MNISTのデータセットをロードする"""
-        mnist = fetch_openml('mnist_784', version=1)
+        mnist = fetch_openml('mnist_784', version=1, parser='auto')
         X = mnist.data
         y = mnist.target
 
         # データセットを訓練用とテスト用に分割する
-        self.X_train, self.X_test, self.y_train, self.y_test =\
-            train_test_split(X, y, test_size=0.2, random_state=42)
+        self.X_train, self.X_test, self.y_train, self.y_test\
+            = train_test_split(X, y, test_size=0.2, random_state=42)
 
     def save_model(self, filepath:str) -> None:
         """ランダムフォレストクラス分類器の評価結果を保存する"""
