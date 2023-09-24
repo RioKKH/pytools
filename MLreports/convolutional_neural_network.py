@@ -22,7 +22,9 @@ class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
         #self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        # 画像のチャンネル数は1で、出力チャンネル数は16、カーネルサイズは3、パディングは1
         self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
+        # 画像のチャンネル数は16で、出力チャンネル数は32、カーネルサイズは3、パディングは1
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         #self.relu = nn.ReLU()
         self.relu = nn.ReLU(inplace=True)

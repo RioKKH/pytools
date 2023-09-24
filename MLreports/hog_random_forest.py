@@ -15,7 +15,7 @@ from random_forest import RandomForestModel
 
 class HOGRandomForestModel(RandomForestModel):
 
-    def __init__(self, n_trials=50):
+    def __init__(self, n_trials=100):
         super().__init__()
         self.n_trials = n_trials
 
@@ -71,6 +71,7 @@ class HOGRandomForestModel(RandomForestModel):
         """モデルの評価を行う"""
         self.y_pred = self.model.predict(self.X_test_features)
         self.accuracy = accuracy_score(self.y_test, self.y_pred)
+        print(f"Test Accuracy: {self.accuracy:.3f}")
 
     def plot_images(self, num_images=5):
         """ランダムに画像を選択してプロットする"""

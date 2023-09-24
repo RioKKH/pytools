@@ -75,7 +75,7 @@ class GLCMRandomForestModel(RandomForestModel):
         """RandomForestモデルの構築する"""
         self.model = RandomForestClassifier(n_estimators=100, 
                                             random_state=42,
-                                            verbose=2)
+                                            verbose=1)
 
     def train_model(self):
         """GLCM特徴量を用いてモデルの学習を行う"""

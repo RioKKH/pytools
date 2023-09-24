@@ -60,7 +60,7 @@ class RandomForestModel(BaseModel):
         """ランダムフォレオストクラス分類器のインスタンスを作成する"""
         self.model = RandomForestClassifier(n_estimators=100, 
                                             random_state=42,
-                                            verbose=2)
+                                            verbose=1)
 
     def train_model(self):
         """ランダムフォレストクラス分類器を訓練する"""
@@ -70,7 +70,7 @@ class RandomForestModel(BaseModel):
         """テストデータを用いてランダムフォレストクラス分類器を評価する"""
         self.y_pred = self.model.predict(self.X_test)
         self.accuracy = accuracy_score(self.y_test, self.y_pred)
-        print(f"Test Accuracy: {self.accuracy}")
+        print(f"Test Accuracy: {self.accuracy:.3f}")
 
     def plot_images(self, num_images=5):
         """ランダムに画像を選択してプロットする"""
