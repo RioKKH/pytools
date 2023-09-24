@@ -23,13 +23,18 @@ class HOGRandomForestModel(RandomForestModel):
         """HOG特徴量を計算する"""
         #訓練データのHOG特徴量を計算する
         self.X_train_features\
-            = np.array([hog(img.reshape(28, 28))
-                        for img in self.X_train.to_numpy()])
-
-        # テストデータのHOG特徴量を計算する
+            = self.X_train.reshape(-1, 28, 28).astype(np.uint8)
         self.X_test_features\
-            = np.array([hog(img.reshape(28, 28))
-                        for img in self.X_test.to_numpy()])
+            = self.X_test.reshape(-1, 28, 28).astype(np.uint8)
+
+        #self.X_train_features\
+        #    = np.array([hog(img.reshape(28, 28))
+        #                for img in self.X_train.to_numpy()])
+
+        ## テストデータのHOG特徴量を計算する
+        #self.X_test_features\
+        #    = np.array([hog(img.reshape(28, 28))
+        #                for img in self.X_test.to_numpy()])
 
     def compute_features_with_params(self, params):
         """
@@ -92,12 +97,17 @@ class HOGRandomForestModel(RandomForestModel):
         plt.show()
 
     def objectives(self, trial):
+
+        img_size = 28
+        max_pixels_per_cell = img_size
+        max_cells_per_block = img_size\
+            // trial.suggest_int('pixels_per_cell', 1, max_pixels_per_cell)
         # HOGのハイパーパラメータを設定する
-        pixels_per_cell = trial.suggest_int('pixels_per_cell', 4, 16)
+        pixels_per_cell = trial.suggest_int('pixels_per_cell', 1, max_pixels_per_cell)
         # cells_per_blockが意味するのは、セルの分割数
-        cells_per_block = trial.suggest_int('cells_per_block', 1, 4)
+        cells_per_block = trial.suggest_int('cells_per_block', 1, max_cells_per_block)
         # orientationsが意味するのは、特徴量の方向の分割数
-        orientations = trial.suggest_int('orientations', 4, 16)
+        orientations = trial.suggest_int('orientations', 1, 16)
 
         # Startified K-Fold Cross Validationでモデルの評価を行う
         n_splits = 5
@@ -156,8 +166,9 @@ class HOGRandomForestModel(RandomForestModel):
                                test_size=0.2, stratify=self.y_train,
                                random_state=42)
 
-        self.optimize_hyperparams()
-        self.compute_features_with_params(self.study.best_params)
+        #self.optimize_hyperparams()
+        #self.compute_features_with_params(self.study.best_params)
+        self.compute_features_with_params({"pixels_per_cell": 7, "cells_per_block": 4, "orientations": 6})
         self.build_model()
         self.train_model()
         self.evaluate_model()
