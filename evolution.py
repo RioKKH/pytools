@@ -2,16 +2,36 @@
 # -*- coding: utf-8 -*-
 
 import os
+import glob
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+
+def load_data(fin:str) -> pd.DataFrame:
+    names = ('POPULATION', 'CHROMOSOME', 'ELAPSEDTIME', 'FITMAX', 'FITMIN', 'FITMEAN')
+    df = pd.read_csv(fin, names=names)
+    return df
+
+
+def load_data_CPU(fin:str) -> pd.DataFrame:
+    names = ("gen", "FITMEAN", "FITMIN", "FITMAX", "FITSTD")
+    df = pd.read_csv(fin, names=names)
+    return df
+
 
 def load_stats(fin:str) -> pd.DataFrame:
     names = ('gen', 'fitmean', 'fitmin', 'fitmax', 'fitstd')
     df = pd.read_csv(fin,
                      index_col=0,
                      names = names)
+    return df
+
+
+def load_trend_data(fin:str) -> pd.DataFrame:
+    names = ('gen', 'pop', 'chrom', 'elapsedtime', 'fitmax', 'fitmin', 'fitmean')
+    df = pd.read_csv(fin, names=names)
 
     return df
 
@@ -54,7 +74,7 @@ def plot(df, vmin=0, vmax=10000):
     plt.tight_layout()
     plt.show()
 
-def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=2000) -> None:
+def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=2000, rvmin=0, rvmax=30) -> None:
     def _plot(cgpu, vmin=vmin, vmax=vmax):
         sns.heatmap(cgpu, 
                     #annot=True, 
@@ -62,6 +82,7 @@ def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=2000) -> None:
                     square=True,
                     vmin=vmin, vmax=vmax,
                     cbar=True,
+                    cmap='jet',
                     xticklabels=True,
                     yticklabels=True)
         plt.tight_layout()
@@ -77,5 +98,6 @@ def make_heatmap(dfCPU, dfGPU, vmin=0, vmax=2000) -> None:
 
     _plot(cpu)
     _plot(gpu)
-    _plot(ratio, vmin=0, vmax=10)
+    _plot(ratio, vmin=rvmin, vmax=rvmax)
+
 
