@@ -101,13 +101,13 @@ def plot(df_avg_with, df_avg_without):
     plt.show()
 
 
-def plot_cpu_vs_gpu(df_cpu, df_gpu):
+def plot_cpu_vs_gpu(df1, df2, label1="CPU_MEAN", label2="GPU_MEAN"):
     plt.figure(figsize=(12, 6))
-    plt.plot(df_cpu['gen'], df_cpu['FITMEAN'], label='CPU_MEAN', alpha=0.8)
-    plt.fill_between(df_cpu['gen'], df_cpu['FITMIN'], df_cpu['FITMAX'], alpha=0.3)
+    plt.plot(df1['gen'], df1['FITMEAN'], label=label1, alpha=0.8)
+    plt.fill_between(df1['gen'], df1['FITMIN'], df1['FITMAX'], alpha=0.3)
 
-    plt.plot(df_gpu['gen'], df_gpu['FITMEAN'], label='GPU_MEAN', alpha=0.8)
-    plt.fill_between(df_gpu['gen'], df_gpu['FITMIN'], df_gpu['FITMAX'], alpha=0.3)
+    plt.plot(df2['gen'], df2['FITMEAN'], label=label2, alpha=0.8)
+    plt.fill_between(df2['gen'], df2['FITMIN'], df2['FITMAX'], alpha=0.3)
 
     plt.title("Fitness Evolution")
     plt.xlabel("Generation")
