@@ -109,11 +109,11 @@ def plot_cpu_vs_gpu(df1, df2, label1="CPU_MEAN", label2="GPU_MEAN"):
     plt.plot(df2['gen'], df2['FITMEAN'], label=label2, alpha=0.8)
     plt.fill_between(df2['gen'], df2['FITMIN'], df2['FITMAX'], alpha=0.3)
 
-    plt.title("Fitness Evolution")
-    plt.xlabel("Generation")
-    plt.ylabel("Fitness")
+    plt.title("Fitness Evolution", fontsize=24)
+    plt.xlabel("Generation", fontsize=18)
+    plt.ylabel("Fitness", fontsize=18)
     plt.grid(ls="dashed", color="gray", alpha=0.5)
-    plt.legend(loc="upper right")
+    plt.legend(loc="upper right", fontsize=18)
     plt.show()
 
 
