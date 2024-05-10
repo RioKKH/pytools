@@ -13,7 +13,8 @@ def process_fitness_trends(population_size:int,
                            num_experiments=10,):
 
     # ファイルパターンにマッチするファイルのPathオブジェクトを生成する
-    names = ["generation", "mean", "min", "max", "std"]
+    names = ["generation", "population", "chromosome", "max", "min", "mean"]
+    #names = ["generation", "mean", "min", "max", "std"]
 
     path = Path(".")
     pattern = f"fitnesstrend_{tgt_time}_{population_size}_{chromosome_size}_*.csv"
