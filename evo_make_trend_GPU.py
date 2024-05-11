@@ -56,7 +56,8 @@ def process_fitness_trends(population_size:int,
     })
 
     # 結果をCSVファイルに保存する
-    output_file = f"fitnesstrend_{tgt_time}_{population_size}_{chromosome_size}_avg.csv"
+    output_file = (f"fitnesstrend_{tgt_time}_{population_size}_"
+                   f"{chromosome_size}_avg_GPU.csv")
     results.to_csv(output_file, index=False)
 
 
