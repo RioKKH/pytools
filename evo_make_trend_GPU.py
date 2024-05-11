@@ -8,7 +8,7 @@ from pathlib import Path
 
 def process_fitness_trends(population_size:int,
                            chromosome_size:int,
-                           tgt_time="20240427-141320",
+                           tgt_time:str,
                            num_generations=512,
                            num_experiments=10,):
 
@@ -60,9 +60,9 @@ def process_fitness_trends(population_size:int,
     results.to_csv(output_file, index=False)
 
 
-def process_all_combinations():
+def process_all_combinations(tgt_time="20240427-141320"):
     for pop_size in range(128, 1024+1, 128):
         for chrom_size in range(128, 1024+1, 128):
-            process_fitness_trends(pop_size, chrom_size)
+            process_fitness_trends(pop_size, chrom_size, tgt_time=tgt_time)
 
 
