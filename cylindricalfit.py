@@ -12,8 +12,10 @@ def sigmoid_2d(x1, x2, a1=1, a2=1, b=0):
     return 1 / (1 + np.exp(-(a1*x1 + a2*x2 + b)))
 
 # Define the cylindrical sigmoid function
-def sigmoid_cylindrical(x, a, b):
-    r = np.sqrt(x[:, 0]**2 + x[:, 1]**2) # Compute the Euclidean distance from the origin
+def sigmoid_cylindrical(x1, x2, a, b):
+    r = np.sqrt(x1**2 + x2**2) # Compute the Euclidean distance from the origin
+#def sigmoid_cylindrical(x, a, b):
+#    r = np.sqrt(x[:, 0]**2 + x[:, 1]**2) # Compute the Euclidean distance from the origin
     return 1 / (1 + np.exp(-(a*r + b)))
 
 def erf_cylindrical(x, a, b):
@@ -32,7 +34,8 @@ def plot_sigmoid_2d():
     X1, X2 = np.meshgrid(x1, x2)
 
     # Compute the sigmoid function on the grid
-    Y = sigmoid_2d(X1, X2, a1=1, a2=1, b=0)
+    Y = sigmoid_cylindrical(X1, X2, a1=1, a2=1, b=0)
+    #Y = sigmoid_2d(X1, X2, a1=1, a2=1, b=0)
 
     # Create the 3D plot
     fig = plt.figure(figsize=(10, 8))
@@ -53,10 +56,11 @@ def fit_cylindrical_data():
 
     # Fit the data using the cylindrical sigmoid function
     #popt, pcov = curve_fit(sigmoid_cylindrical, x_data, y_data, p0=[1, 0])
-    #popt, pcov = curve_fit(erf_cylindrical, x_data, y_data, p0=[1, 5])
-    popt, pcov = curve_fit(erf_cylindrical_center, x_data, y_data, p0=[1, 5, 0, 0])
+    popt, pcov = curve_fit(erf_cylindrical, x_data, y_data, p0=[1, 5])
+    #popt, pcov = curve_fit(erf_cylindrical_center, x_data, y_data, p0=[1, 5, 0, 0])
 
     # print the optimized parameters
     print(popt)
 
-fit_cylindrical_data()
+#fit_cylindrical_data()
+plot_sigmoid_2d()
