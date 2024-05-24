@@ -19,16 +19,16 @@ class EvoCPU:
 
     def make_average(self, skipnum=0) -> None:
         grouped = self.df.groupby(["population", "chromosome"])
-        averaged = grouped.apply(lambda x: x.iloc[skipnum:-1].mean())
-        self.heatmap_data = averaged["time"].unstack()
+        averaged = grouped.apply(lambda x: x.iloc[skipnum:].mean())
+        self.heatmap_data = averaged["time"].unstack().T[::-1]
 
     def plot_combined(self,
                       pivoted:bool=True,
                       vmin:int=0, vmax:int=10000,
                       elev:int=20, azim:int=240) -> None:
         if pivoted:
-            dataheat = self.heatmap_data.iloc[::-1]
-            # dataheat = self.heatmap_data
+            #dataheat = self.heatmap_data.iloc[::-1]
+            dataheat = self.heatmap_data
             data3d = self.heatmap_data
         else:
             dataheat = self.df.pivot(columns="population",
@@ -36,7 +36,7 @@ class EvoCPU:
                                      values="time").iloc[::-1]
             dataheat = self.df.pivot(columns="population",
                                      index="chromosome",
-                                     values="time")
+                                     values="time")[::-1]
 
         fig = plt.figure(figsize=(16, 6))
         plt.subplot(1, 2, 1)
@@ -51,6 +51,7 @@ class EvoCPU:
         tick_labels = [0, 128, 256, 384, 512, 640, 768, 896, 1024]
         ax.set_xticks([i / 32 - 0.5 for i in tick_labels])
         ax.set_xticklabels(tick_labels, fontsize=18)
+        #ax.set_yticks([len(data3d) - (i / 32) + 0.5 for i in tick_labels])
         ax.set_yticks([len(data3d) - (i / 32) + 0.5 for i in tick_labels])
         #ax.set_yticks([len(data3d) - (i / 32) + 0.5 for i in tick_labels[::-1]])
         ax.set_yticklabels(tick_labels, fontsize=18)
@@ -60,8 +61,8 @@ class EvoCPU:
         ax = plt.subplot(1, 2, 2, projection="3d")
         x = np.arange(32, 1024+1, 32)
         #y = np.arange(32, 512+1, 32)
-        #y = np.arange(32, 1024+1, 32)[::-1]
-        y = np.arange(32, 1024+1, 32)
+        y = np.arange(32, 1024+1, 32)[::-1]
+        #y = np.arange(32, 1024+1, 32)
         X, Y = np.meshgrid(x, y)
         Z = data3d.values
 
@@ -85,7 +86,7 @@ class EvoCPU:
         # Set axis labels
         ax.set_xlabel("Population", fontsize=18)
         ax.set_ylabel("Chromosome", fontsize=18)
-        ax.set_zlabel("Elapsed Time [ms]", fontsize=18)
+        #ax.set_zlabel("Elapsed Time [ms]", fontsize=18)
 
         # Plot the figure
         plt.tight_layout()

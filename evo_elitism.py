@@ -89,7 +89,11 @@ class EvoElitism:
             data3d = self.df.pivot_table(columns="population",
                                          index="chromosome",
                                          values='time')[::-1]
-        print(f"min={dataheat.values.min():.4f}, max={dataheat.values.max():.4f}")
+        print(
+            f"min={dataheat.values.min():.4f}, "
+            f"max={dataheat.values.max():.4f}, "
+            f"mean={dataheat.values.mean():.4f}"
+        )
 
         fig = plt.figure(figsize=(16, 6))
         plt.subplot(1, 2, 1)
@@ -156,7 +160,11 @@ def plot_comparison(lhs, rhs, kind="ratio", vmin=0, vmax=30, elev=20, azim=240):
         comp = lhs - rhs
 
     print(comp)
-    print(f"min={comp.values.min():.4f}, max={comp.values.max():.4f}")
+    print(
+        f"min={comp.values.min():.4f}, "
+        f"max={comp.values.max():.4f}, "
+        f"mean={comp.values.mean():.4f}"
+    )
     dataheat = comp
     data3d = comp
 
