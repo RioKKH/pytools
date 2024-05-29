@@ -38,6 +38,12 @@ class EvoCPU:
                                      index="chromosome",
                                      values="time")[::-1]
 
+        print(
+            f"min={dataheat.min().min():.4f}, "
+            f"max={dataheat.max().max():.8f}, "
+            f"mean={dataheat.mean().mean():.8f}"
+        )
+
         fig = plt.figure(figsize=(16, 6))
         plt.subplot(1, 2, 1)
         ax = sns.heatmap(dataheat,
