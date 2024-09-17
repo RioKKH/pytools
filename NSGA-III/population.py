@@ -12,10 +12,12 @@ class Population:
         """
         :param population: List of individuals in the population.
         :param fronts: List of fronts in the population. Each front is a list
+        :param reference_points: Reference points used for calculating the hypervolume.
         of individuals.
         """
         self.population = []
         self.fronts = []
+        self.reference_points = []
 
     def __len__(self):
         """
