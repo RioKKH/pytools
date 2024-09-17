@@ -45,8 +45,8 @@ def plotNyoro(dfgpu_pe: pd.DataFrame,
     fig.patch.set_facecolor('white')
     # 上部と下部に同じデータを描画する
     #dfcpu.plot(x='generation', y='mean', ax=ax[0], label='CPU')
-    dfgpu_re.plot(x='generation', y='mean', ax=ax[0], label='GPU regular elitism')
-    dfgpu_pe.plot(x='generation', y='mean', ax=ax[0], label='GPU pesudo elitism')
+    dfgpu_re.plot(x='generation', y='mean', ax=ax[0], label='Regular Elitism')
+    dfgpu_pe.plot(x='generation', y='mean', ax=ax[0], label='Pesudo  Elitism')
     #plt.fill_between(dfcpu['generation'], dfcpu['min'],
     #ax[0].fill_between(dfcpu['generation'], dfcpu['min'],
     #                 dfcpu['max'], alpha=0.3)#, ax=ax[0])
@@ -58,8 +58,8 @@ def plotNyoro(dfgpu_pe: pd.DataFrame,
                      dfgpu_pe['max'], alpha=0.3)#, ax=ax[0])
 
     #dfcpu.plot(x='generation', y='mean', ax=ax[1], label='CPU')
-    dfgpu_re.plot(x='generation', y='mean', ax=ax[1], label='GPU regular elitism')
-    dfgpu_pe.plot(x='generation', y='mean', ax=ax[1], label='GPU pesudo elitism')
+    dfgpu_re.plot(x='generation', y='mean', ax=ax[1], label='Regular Elitism')
+    dfgpu_pe.plot(x='generation', y='mean', ax=ax[1], label='Pesudo  Elitism')
     #plt.fill_between(dfcpu['generation'], dfcpu['min'],
     #ax[1].fill_between(dfcpu['generation'], dfcpu['min'],
     #                 dfcpu['max'], alpha=0.3)#, ax=ax[1])
@@ -71,7 +71,7 @@ def plotNyoro(dfgpu_pe: pd.DataFrame,
                      dfgpu_pe['max'], alpha=0.3)#, ax=ax[1])
 
     # 上部の凡例位置を上に調整する
-    ax[0].legend(loc='upper left', bbox_to_anchor=(0.3, 0.7), fontsize=18)
+    ax[0].legend(loc='upper left', bbox_to_anchor=(0.4, 0.7), fontsize=18)
 
     # 下部の凡例を非表示にする
     ax[1].get_legend().remove()
@@ -143,16 +143,18 @@ def plotNyoro(dfgpu_pe: pd.DataFrame,
         plt.close()
 
 
-def makeFitSlide(gpu_pe_tgt: str, gpu_re_tgt: str, show=True) -> None:
-    gpure128 = (f"fitnesstrend_20240425-011943_128_1024_avg_GPU.csv")
-    gpupe128 = (f"fitnesstrend_20240425-010644_128_1024_avg_GPU.csv")
+def makeFitSlide(show=True) -> None:
+    gpure128 = (f"fitnesstrend_20240515-235139_128_128_avg_GPU.csv")
+    gpupe128 = (f"fitnesstrend_20240516-155729_128_128_avg_GPU.csv")
     dfgpu_re128 = load(gpure128)
     dfgpu_pe128 = load(gpupe128)
     plotNyoro(dfgpu_pe128, dfgpu_re128, 128, 128, show=show)
     plt.close()
 
-    gpure1024 = (f"fitnesstrend_20240425-011943_1024_1024_avg_GPU.csv")
-    gpupe1024 = (f"fitnesstrend_20240425-010644_1024_1024_avg_GPU.csv")
+    #gpure1024 = (f"fitnesstrend_20240425-011943_1024_1024_avg_GPU.csv")
+    #gpupe1024 = (f"fitnesstrend_20240425-010644_1024_1024_avg_GPU.csv")
+    gpure1024 = (f"fitnesstrend_20240515-235139_1024_1024_avg_GPU.csv")
+    gpupe1024 = (f"fitnesstrend_20240516-155729_1024_1024_avg_GPU.csv")
     dfgpu_re1024 = load(gpure1024)
     dfgpu_pe1024 = load(gpupe1024)
     plotNyoro(dfgpu_pe1024, dfgpu_re1024, 1024, 1024, show=show)
