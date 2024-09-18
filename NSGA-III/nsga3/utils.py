@@ -7,6 +7,7 @@ import numpy as np
 from scipy.special import comb
 from nsga3.population import Population
 from nsga3.individual import Individual
+from nsga3.reference_point import ReferencePoint
 
 
 class NSGA3Utils:
