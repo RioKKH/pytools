@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import random
+import numpy as np
 
-from nsga2.individual import Individual
+from nsga3.individual import Individual
 
 
 class Problem:
@@ -62,7 +63,8 @@ class Problem:
         if self.expand:
             individual.objectives = [f(*individual.features) for f in self.objectives]
         else:
-            individual.objectives = [f(individual.features) for f in self.objectives]
+            #individual.objectives = [f(individual.features) for f in self.objectives]
+            individual.objectives = self.objectives[0](individual.features)
 
     def update_ideal_point(self, population):
         """NSGA-IIIのための理想点更新"""

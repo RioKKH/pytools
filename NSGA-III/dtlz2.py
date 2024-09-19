@@ -15,18 +15,19 @@ class DTLZ2(Problem):
         self.num_of_objectives = num_of_objectives
 
     def objective_function(self, x):
-        f = []
+        x = np.array(x)
+        #f = []
+        f = np.zeros(self.num_of_objectives)
         g = np.sum((x[self.num_of_objectives-1:] - 0.5) ** 2)
         for i in range(self.num_of_objectives):
-            f_i = (1 + g)
+            f[i] = (1 + g)
             for j in range(self.num_of_objectives - i - 1):
-                f_i *= np.cos(x[j] * np.pi / 2)
+                f[i] *= np.cos(x[j] * np.pi / 2)
             if i > 0:
-                f_i *= np.sin(x[self.num_of_objectives - i - 1] * np.pi / 2)
-            f.append(f_i)
+                f[i] *= np.sin(x[self.num_of_objectives - i - 1] * np.pi / 2)
         return f
 
-    def plot_results(population, num_objectives):
+    def plot_results(self, population, num_objectives):
         if num_objectives == 2:
             plt.figure(figsize = (8, 6))
             plt.scatter([ind.objectives[0] for ind in population],

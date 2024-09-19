@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+from typing import List
 
 import numpy as np
 from scipy.special import comb
@@ -21,7 +22,8 @@ class NSGA3Utils:
                  num_of_tour_particips=2,
                  tournament_prob=0.9,
                  crossover_param=2,
-                 mutation_param=5):
+                 mutation_param=5,
+                 division_num=12):
         """
         Initializes an instance of the NSGA2Utils class
 
@@ -40,7 +42,7 @@ class NSGA3Utils:
         self.crossover_param = crossover_param
         self.mutation_param = mutation_param
         self.reference_points = self.generate_reference_points(problem.num_of_objectives,
-                                                               num_of_individuals)
+                                                               division_num)
 
 
     def create_initial_population(self):
@@ -59,7 +61,7 @@ class NSGA3Utils:
         return population
 
 
-    def fast_nondominated_sort(self, population):
+    def fast_nondominated_sort(self, population) -> List[List[Individual]]:
         """
         Performs fast non-dominated sort on the population. It calculates the 
         domination count and dominated solutions for each individual, and
@@ -104,50 +106,62 @@ class NSGA3Utils:
             i = i + 1
             population.fronts.append(temp)
 
+        if not population.fronts:
+            print("Warning: No fronts were created.")
+            population.fronts = [[ind for ind in population]]
 
-    def calculate_crowding_distance(self, front):
-        """
-        Calculates the crowding distance for each individual in the front.
-        The crowding distance is a measure of how close an individual is to its
-        neighbors.
-        """
-        if len(front) > 0:
-            solutions_num = len(front)
-            for individual in front:
-                individual.crowding_distance = 0
+        # 空のフロントを削除
+        population.fronts = [front for front in population.fronts if front]
 
-            for m in range(len(front[0].objectives)):
-                front.sort(key=lambda individual: individual.objectives[m])
+        print(f"Number of fronts: {len(population.fronts)}")
+        print(f"Sizes of fronts: {[len(front) for front in population.fronts]}")
 
-                # frontの両端の混雑距離はinfなので、大きな数値をここでは
-                # セットしているのだと思われる
-                front[0].crowding_distance = 10 ** 9 # float('inf')
-                front[solutions_num - 1].crowding_distance = 10 ** 9 # float('inf')
-
-                m_values = [individual.objectives[m] for individual in front]
-                scale = max(m_values) - min(m_values)
-                if scale == 0: scale = 1
-                for i in range(1, solutions_num - 1):
-                    front[i].crowding_distance +=\
-                        (front[i + 1].objectives[m] - front[i - 1].objectives[m]) / scale
+        return population.fronts
 
 
-    def crowding_operator(self, individual, other_individual):
-        """
-        Compares two individuals based on their rank and crowding distance. It
-        is used in the selection process to choose which individual will be kept
-        in the population.
+    #def calculate_crowding_distance(self, front):
+    #    """
+    #    Calculates the crowding distance for each individual in the front.
+    #    The crowding distance is a measure of how close an individual is to its
+    #    neighbors.
+    #    """
+    #    if len(front) > 0:
+    #        solutions_num = len(front)
+    #        for individual in front:
+    #            individual.crowding_distance = 0
 
-        :return: 1 if the first individual is better, -1 otherwise.
-        """
-        # If the first individual's  rank is lower or (the ranks are equal and
-        # the first individual's crowding distance is larger)
-        if (individual.rank < other_individual.rank) or \
-                ((individual.rank == other_individual.rank) and (
-                    individual.crowding_distance > other_individual.crowding_distance)):
-            return 1
-        else:
-            return -1
+    #        for m in range(len(front[0].objectives)):
+    #            front.sort(key=lambda individual: individual.objectives[m])
+
+    #            # frontの両端の混雑距離はinfなので、大きな数値をここでは
+    #            # セットしているのだと思われる
+    #            front[0].crowding_distance = 10 ** 9 # float('inf')
+    #            front[solutions_num - 1].crowding_distance = 10 ** 9 # float('inf')
+
+    #            m_values = [individual.objectives[m] for individual in front]
+    #            scale = max(m_values) - min(m_values)
+    #            if scale == 0: scale = 1
+    #            for i in range(1, solutions_num - 1):
+    #                front[i].crowding_distance +=\
+    #                    (front[i + 1].objectives[m] - front[i - 1].objectives[m]) / scale
+
+
+    #def crowding_operator(self, individual, other_individual):
+    #    """
+    #    Compares two individuals based on their rank and crowding distance. It
+    #    is used in the selection process to choose which individual will be kept
+    #    in the population.
+
+    #    :return: 1 if the first individual is better, -1 otherwise.
+    #    """
+    #    # If the first individual's  rank is lower or (the ranks are equal and
+    #    # the first individual's crowding distance is larger)
+    #    if (individual.rank < other_individual.rank) or \
+    #            ((individual.rank == other_individual.rank) and (
+    #                individual.crowding_distance > other_individual.crowding_distance)):
+    #        return 1
+    #    else:
+    #        return -1
 
 
     def create_children(self, population):
@@ -198,21 +212,30 @@ class NSGA3Utils:
         ref_points = []
         initial_point = [0] * num_objectives
         generate_recursive(ref_points, initial_point, num_points, num_points, 0)
+        print("Generated reference points shape: ", np.array(ref_points).shape)
         return np.array(ref_points)
 
     def associate_to_reference_point(self, population, reference_points):
         """
-        個体分の各個体を最も近い参照点に関連づける
+        個体群の各個体を最も近い参照点に関連づける
 
         :param population: 個体群
         :param reference_points: 参照点のリスト
         """
+        print("Population size: ", len(population))
+        print("Number of reference points: ", reference_points.shape)
+
         # 目的関数値を正則化する
         normalized_objectives = self.normalize_objectives(population)
+        print("Normalized objectives shape:", normalized_objectives.shape)
 
-        for individual in population:
+        for i, individual in enumerate(population):
+            print(f"Individual {i} objectives shape: ", np.array(individual.objectives).shape)
+            print(f"Normalized objectives[{i}] shape: ", normalized_objectives[i].shape)
+            print(f"Reference points shape: ", reference_points.shape)
+
             # 各個体と全ての参照点との距離を計算する
-            distances = np.linalg.norm(normalized_objectives - reference_points, axis=1)
+            distances = np.linalg.norm(normalized_objectives[i] - reference_points, axis=1)
 
             # 最も近い参照点のインデックスを個体に関連付ける
             individual.associated_ref_point = np.argmin(distances)
@@ -229,13 +252,16 @@ class NSGA3Utils:
         """
         # 全個体の目的関数値を抽出する
         objectives = np.array([ind.objectives for ind in population])
+        print("Original objectives shape: ", objectives.shape)
 
         # 各目的関数の最小値と最大値を計算する
         min_values = np.min(objectives, axis=0)
         max_values = np.max(objectives, axis=0)
 
         # 目的関数値を0-1の範囲に正規化する
-        return (objectives - min_values) / (max_values - min_values)
+        normalized = (objectives - min_values) / (max_values - min_values + 1e-10)
+        print("Normalized objectives shape: ", normalized.shape)
+        return normalized
 
     def select_population_nsga3(self, population, num_individuals):
         """
@@ -246,24 +272,49 @@ class NSGA3Utils:
         :return: 選択された個体のリスト
         """
         fronts = self.fast_nondominated_sort(population)
+
+        print(f"Number of fronts: {len(fronts)}")
+        print(f"Sizes of fronts: {[len(front) for front in fronts]}")
+
+        if not fronts:
+            print("Error: No fronts were returned by fast_nondominated_sort")
+            # フォールバック: 現在の個体をそのまま返す
+            selected_population = Population()
+            selected_population.extend(population.population[:num_individuals])
+            return selected_population
+
         next_population = []
         front_index = 0
 
         # フロントを順番に追加していく
-        while len(next_population) + len(fronts[front_index]) <= num_individuals:
+        while front_index < len(fronts) and \
+                len(next_population) + len(fronts[front_index]) <= num_individuals:
             next_population.extend(fronts[front_index])
             front_index += 1
 
         # 最後のフロントから個体を選択する必要がある場合
-        if len(next_population) < num_individuals:
-            last_fron = fronts[front_index]
+        if len(next_population) < num_individuals and front_index < len(fronts):
+            last_front = fronts[front_index]
             self.associate_to_reference_point(last_front, self.reference_points)
 
             # ニッチング処理を行い、最後のフロントから個体を選択する
             selected = self.niching(last_front, num_individuals - len(next_population))
             next_population.extend(selected)
 
-        return next_population
+        print(f"Selected population size: {len(next_population)}")
+
+        # 選択された個体数が足りない場合、ランダムに個体を追加する
+        if (len(next_population) < num_individuals):
+            remaining = random.sample(population.population,
+                                      num_individuals - len(next_population))
+            next_population.extend(remaining)
+            print(f"Added {len(remaining)} random individuals to meet population size")
+
+        # Population オブジェクトを生成して返す
+        selected_population = Population()
+        selected_population.extend(next_population)
+
+        return selected_population
 
     def niching(self, last_front, k):
         """
@@ -278,7 +329,7 @@ class NSGA3Utils:
 
         # 各参照点に関連付けられた個体数をカウント
         for ind in last_front:
-            reference_point_counts[ind.associatd_ref_point] += 1
+            reference_point_counts[ind.associated_ref_point] += 1
 
         while len(selected) < k:
             # 最も個体数の少ない参照点を選択
@@ -292,7 +343,7 @@ class NSGA3Utils:
                 # 最も近い個体を選択
                 chosen = min(associated_individuals, key=lambda ind: ind.perpendicular_distance)
                 selected.append(chosen)
-                last_front.remote(chosen)
+                last_front.remove(chosen)
 
                 # 選択した個体の参照点のカウントを更新する
                 reference_point_counts[min_count_ref_point] += 1
@@ -399,11 +450,11 @@ class NSGA3Utils:
         d2 -= np.dot(d2, d1_norm) * d1_norm
 
         # 子個体を2つ生成する
-        child1 = m \
-            + np.random.normal1(0, sigma_xi) * d / 2 \
+        child1 = middle_of_parents \
+            + np.random.normal(0, sigma_xi) * d1 / 2 \
             + np.random.normal(0, sigma_eta) * d2
-        child2 = m \
-            - np.random.normal1(0, sigma_xi) * d / 2 \
+        child2 = middle_of_parents \
+            - np.random.normal(0, sigma_xi) * d1 / 2 \
             + np.random.normal(0, sigma_eta) * d2
 
         return child1, child2
@@ -435,8 +486,8 @@ class NSGA3Utils:
 
         for i in range(len(parent1)):
             d = np.abs(parent1[i] - parent2[i])
-            lower_bound = np.min(parent1[i], parent2[i]) - alpha * d
-            upper_bound = np.max(parent1[i], parent2[i]) + alpha * d
+            lower_bound = np.min([parent1[i], parent2[i]]) - alpha * d
+            upper_bound = np.max([parent1[i], parent2[i]]) + alpha * d
             child1[i] = np.random.uniform(lower_bound, upper_bound)
             child2[i] = np.random.uniform(lower_bound, upper_bound)
 
@@ -445,7 +496,7 @@ class NSGA3Utils:
 
     def __simplex_crossover(
         self,
-        parents: list(Individual),
+        parents: List[Individual],
         epsilon: float) -> tuple[Individual, Individual]:
         """SPX
 

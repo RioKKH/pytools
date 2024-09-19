@@ -32,6 +32,7 @@ class Evolution:
         :param mutation_param:        The parameter used in mutation operation. 
         """
 
+        self.problem = problem
         self.utils = NSGA3Utils(problem,
                                 num_of_individuals,
                                 num_of_tour_particips,
@@ -43,7 +44,7 @@ class Evolution:
         self.num_of_generations = num_of_generations
         #self.on_generation_finished = []
         self.num_of_individuals = num_of_individuals
-        self.probems = problem
+        self.probem = problem
 
     def evolve(self):
         """
@@ -82,7 +83,7 @@ class Evolution:
 
             # 次世代の個体群を設定
             self.population = Population()
-            self.population.extend(next_population)
+            self.population.extend(next_population.population)
             self.population.extend(children)
 
         # 最終世代の非支配ソート
