@@ -6,6 +6,7 @@ from functools import cache
 from typing import Callable
 from tabulate import tabulate
 
+
 # キャッシュ有り版
 @cache
 def fibonacci_cached(i: int) -> int:
@@ -14,6 +15,7 @@ def fibonacci_cached(i: int) -> int:
     else:
         return fibonacci_cached(i - 1) + fibonacci_cached(i - 2)
 
+
 # キャッシュ無版
 def fibonacci_uncached(i: int) -> int:
     if i == 0 or i == 1:
@@ -21,7 +23,10 @@ def fibonacci_uncached(i: int) -> int:
     else:
         return fibonacci_uncached(i - 1) + fibonacci_uncached(i - 2)
 
-def measure_execution_time(func: Callable[[int], int], n: int, iterations: int = 3) -> float:
+
+def measure_execution_time(
+    func: Callable[[int], int], n: int, iterations: int = 3
+) -> float:
     """
     指定された関数の実行時間を計測する
 
@@ -41,6 +46,7 @@ def measure_execution_time(func: Callable[[int], int], n: int, iterations: int =
         times.append(end_time - start_time)
     return sum(times) / iterations
 
+
 def compare_performance(test_numbers: list[int]) -> None:
     """
     キャッシュ有りと無しの実行時間を比較して表示する
@@ -52,14 +58,9 @@ def compare_performance(test_numbers: list[int]) -> None:
         results = []
         cached_time = measure_execution_time(fibonacci_cached, n)
         uncached_time = measure_execution_time(fibonacci_uncached, n)
-        speedup = uncached_time / cached_time if cached_time > 0 else float('inf')
+        speedup = uncached_time / cached_time if cached_time > 0 else float("inf")
 
-        results.append([
-            n,
-            f"{cached_time:.6f}",
-            f"{uncached_time}",
-            f"{speedup:.2f}x"
-        ])
+        results.append([n, f"{cached_time:.6f}", f"{uncached_time}", f"{speedup:.2f}x"])
 
     # 結果を表形式で表示する
     headers = ["n", "キャッシュ有り(秒)", "キャッシュ無し(秒)", "高層化率"]
@@ -71,5 +72,3 @@ if __name__ == "__main__":
     test_numbers = [10, 20, 30, 35]
     print("フィボナッチ数列の実行時間比較\n")
     compare_performance(test_numbers)
-
-
