@@ -8,27 +8,34 @@ from .operators import SBX, mutation
 from .selection import SelectModels
 
 
-def DDEA_SE(c, L, bu, bd):
+def DDEA_SE(c, L, bu, bd, record_history=False):
     """
     Offline Data-Driven Evolutionary Optimization using Selective Surrogate Ensembles (DDEA_SE)
+    * record_history=Trueの時、2次元の場合に各世代の個体群とサロゲート予測値を記録して返す
 
     Parameters:
-      c : int
-          決定変数の数。
-      L : numpy.ndarray
-          オフラインデータ。各行は [c個の決定変数, 正確な目的関数値] の形式。
-      bu : numpy.ndarray
-          各決定変数の上限（1次元配列）。
-      bd : numpy.ndarray
-          各決定変数の下限（1次元配列）。
+        c : int
+            決定変数の数。
+        L : numpy.ndarray
+            オフラインデータ。各行は [c個の決定変数, 正確な目的関数値] の形式。
+        bu : numpy.ndarray
+            各決定変数の上限（1次元配列）。
+        bd : numpy.ndarray
+            各決定変数の下限（1次元配列）。
+        record_history : bool
+            2次元の場合に各世代の状態を記録するか否か
 
     Returns:
-      exec_time : float
-          実行時間（秒）。
-      P : numpy.ndarray
-          最終的な予測最適解（決定変数ベクトル）。
-      gbest : numpy.ndarray
-          各世代の最良解の履歴（各行が1世代分）。
+        exec_time : float
+            実行時間（秒）。
+        P : numpy.ndarray
+            最終的な予測最適解（決定変数ベクトル）。
+        gbest : numpy.ndarray
+            各世代の最良解の履歴（各行が1世代分）。
+        pop_history (optional) : list of np.ndarray
+            各世代の個体群 (決定変数部分)
+        surrogate_history (optional) : list of tuple(X1, X2, Z)
+            各世代でのグリッド上のサロゲート予測値 (2次元の場合)
     """
     np.random.seed(int(time.time()))
     # パラメータ設定
@@ -42,7 +49,7 @@ def DDEA_SE(c, L, bu, bd):
     pm = 1.0 / c  # 突然変異確率
     pop_size = 100  # 個体群サイズ
 
-    # オフラインデータからRBFモデルのプール（エンサンブル）を構築
+    # オフラインデータからRBFモデルのプール（アンサンブル）を構築
     W, B, C_arr, S_arr = RBF_EnsembleUN(L, c, num_neurons, T)
     # 初期は全モデルを使用
     model_indices = np.arange(T)
@@ -63,7 +70,20 @@ def DDEA_SE(c, L, bu, bd):
 
     g = 1
     gbest = []
+    # 以下、履歴記録用のリスト (c==2かつrecord_history=Trueの場合)
+    pop_history = [] if record_history and c == 2 else None
+    surrogate_history = [] if record_history and c == 2 else None
+
     start_time = time.time()
+
+    # 2次元用のグリッド作成 (後のサロゲート予測用)
+    if c == 2 and record_history:
+        x1_lin = np.linspace(bd[0], bu[0], 10)
+        x2_lin = np.linspace(bd[1], bu[1], 10)
+        # x1_lin = np.linspace(bd[0], bu[0], 100)
+        # x2_lin = np.linspace(bd[1], bu[1], 100)
+        X1_grid, X2_grid = np.meshgrid(x1_lin, x2_lin)
+        grid_points = np.c_[X1_grid.ravel(), X2_grid.ravel()]
 
     while g <= gmax:
         # モデル管理：最良個体に基づきサロゲートモデルのサブセットを選択
@@ -83,6 +103,22 @@ def DDEA_SE(c, L, bu, bd):
                 c,
             )
             POP = np.hstack((POP, Y))
+
+        # 記録：原個体群(決定変数部分)を保存(２次元の場合)
+        if record_history and c == 2:
+            pop_history.append(POP[:, :c].copy())
+            # サロゲート予測の計算
+            Y_grid = RBF_Ensemble_predictor(
+                W[model_indices],
+                B[model_indices],
+                C_arr[model_indices],
+                S_arr[model_indices],
+                grid_points,
+                c,
+            )
+            # 平均予測値
+            Z = np.mean(Y_grid, axis=1).reshape(X1_grid.shape)
+            surrogate_history.append((X1_grid, X2_grid, Z))
 
         # 交叉（SBX）による子個体生成
         NPOP1 = SBX(POP, bu, bd, pc, pop_size)
@@ -123,7 +159,11 @@ def DDEA_SE(c, L, bu, bd):
 
     exec_time = time.time() - start_time
     gbest = np.array(gbest)
-    return exec_time, P, gbest
+
+    if record_history and c == 2:
+        return exec_time, P, gbest, pop_history, surrogate_history
+    else:
+        return exec_time, P, gbest
 
 
 if __name__ == "__main__":
