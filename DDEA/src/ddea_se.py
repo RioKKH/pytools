@@ -104,7 +104,7 @@ def DDEA_SE(c, L, bu, bd, record_history=False):
             )
             POP = np.hstack((POP, Y))
 
-        # 記録：原個体群(決定変数部分)を保存(２次元の場合)
+        # 記録：現個体群(決定変数部分)を保存(２次元の場合)
         if record_history and c == 2:
             pop_history.append(POP[:, :c].copy())
             # サロゲート予測の計算
