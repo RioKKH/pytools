@@ -44,7 +44,7 @@ def DDEA_SE(c, L, bu, bd, record_history=False):
     )
     T = 2000  # RBFモデルの総数
     Q = 100  # サロゲートモデルの選択数
-    gmax = 100  # 最大世代数
+    gmax = 10  # 最大世代数
     pc = 1.0  # 交叉確率
     pm = 1.0 / c  # 突然変異確率
     pop_size = 100  # 個体群サイズ
