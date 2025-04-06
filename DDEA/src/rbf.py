@@ -82,7 +82,7 @@ def RBF(SamIn, SamOut, Nc):
 
 def RBF_EnsembleUN(L, c, nc, T):
     """
-    ブートストラップサンプリングによりRBFモデルのエンサンブルを構築
+    ブートストラップサンプリングによりRBFモデルのアンサンブルを構築
 
     Parameters:
       L : numpy.ndarray

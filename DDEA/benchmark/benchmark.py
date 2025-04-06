@@ -21,13 +21,39 @@ def sphere_function(x):
     return np.sum(x**2, axis=1)
 
 
-def generate_offline_data(c, n_samples, bd, bu):
+def rastrigin_function(x):
+    """
+    Rastrigin関数 f(x) = A * d + sum(x^2 - A * cos(2 * pi * x))
+    d: 次元数
+    """
+    A = 10
+    return A * x.shape[1] + np.sum(x**2 - A * np.cos(2 * np.pi * x), axis=1)
+
+
+def rosenbrock_function(x):
+    """
+    Rosenbrock関数: f(x) = sum(100 * (x_{i+1} - x_i^2)^2 + (1 - x_i)^2)
+    """
+    return np.sum(100 * (x[:, 1:] - x[:, :-1] ** 2) ** 2 + (1 - x[:, :-1]) ** 2, axis=1)
+
+
+benchmark_functions = {
+    "sphere": sphere_function,
+    "rastrigin": rastrigin_function,
+    "rosenbrock": rosenbrock_function,
+}
+
+
+def generate_offline_data(c, n_samples, bd, bu, func):
     """
     ベンチマーク用に、ランダムサンプルと
-    Sphere関数の値からなるオフラインデータを生成
+    関数の値からなるオフラインデータを生成
+    Variable:
+        L: (n_samples, c+1)の行列
     """
     X = np.random.uniform(bd, bu, size=(n_samples, c))
-    y = sphere_function(X)
+    y = func(X)
+    # y = sphere_function(X)
     L = np.hstack((X, y.reshape(-1, 1)))
     return L
 
@@ -43,8 +69,18 @@ if __name__ == "__main__":
         default="animation",
         help="出力モード: アニメーション保存か、各世代ごとのPNG画像保存",
     )
+    parser.add_argument(
+        "--benchmark",
+        choices=["sphere", "rastrigin", "rosenbrock"],
+        default="sphere",
+        help="使用するベンチマーク問題",
+    )
     args = parser.parse_args()
     mode = args.mode
+    benchmark_name = args.benchmark
+
+    # 選択されたベンチマーク関数を使用
+    selected_function = benchmark_functions[benchmark_name]
 
     # ベンチマーク問題のパラメータ設定
     # 2次元問題の設定
@@ -52,7 +88,7 @@ if __name__ == "__main__":
     n_samples = 50
     bd = np.full(c, -5)
     bu = np.full(c, 5)
-    L = generate_offline_data(c, n_samples, bd, bu)
+    L = generate_offline_data(c, n_samples, bd, bu, selected_function)
 
     # historyを記録してDDEA_SEアルゴリズムの実行
     print("before ddea-se")
@@ -71,7 +107,8 @@ if __name__ == "__main__":
     x2 = np.linspace(bd[1], bu[1], 200)
     X1, X2 = np.meshgrid(x1, x2)
     grid_points = np.c_[X1.ravel(), X2.ravel()]
-    Z_true = sphere_function(grid_points).reshape(X1.shape)
+    Z_true = selected_function(grid_points).reshape(X1.shape)
+    # Z_true = sphere_function(grid_points).reshape(X1.shape)
 
     num_generations = len(pop_history)
 
