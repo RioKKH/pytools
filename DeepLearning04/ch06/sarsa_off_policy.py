@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 
-import os
-import sys
+if "__file__" in globals():
+    import os
+    import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from collections import defaultdict, deque
 import numpy as np
 from common.gridworld import GridWorld
 from common.utils import greedy_probs
 
 
-class SarsaAgent:
+class SarsaOffPolicyAgent:
     def __init__(self):
         self.gamma = 0.9
         self.alpha = 0.8
@@ -19,11 +21,12 @@ class SarsaAgent:
 
         random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
         self.pi = defaultdict(lambda: random_actions)
+        self.b = defaultdict(lambda: random_actions)
         self.Q = defaultdict(lambda: 0)
         self.memory = deque(maxlen=2)
 
     def get_action(self, state):
-        action_probs = self.pi[state]
+        action_probs = self.b[state]
         actions = list(action_probs.keys())
         probs = list(action_probs.values())
         return np.random.choice(actions, p=probs)
@@ -39,20 +42,23 @@ class SarsaAgent:
         state, action, reward, done = self.memory[0]
         next_state, next_action, _, _ = self.memory[1]
 
-        # 次のQ関数
-        next_q = 0 if done else self.Q[next_state, next_action]
+        if done:
+            next_q = 0
+            rho = 1
+        else:
+            next_q = self.Q[next_state, next_action]
+            rho = self.pi[next_state][next_action] / self.b[next_state][next_action]
 
-        # TD法による更新
-        target = reward + self.gamma * next_q
+        target = rho * (reward + self.gamma * next_q)
         self.Q[state, action] += (target - self.Q[state, action]) * self.alpha
 
-        # 方策の改善
-        self.pi[state] = greedy_probs(self.Q, state, self.epsilon)
+        self.pi[state] = greedy_probs(self.Q, state, 0)
+        self.b[state] = greedy_probs(self.Q, state, self.epsilon)
 
 
 if __name__ == "__main__":
     env = GridWorld()
-    agent = SarsaAgent()
+    agent = SarsaOffPolicyAgent()
 
     episodes = 10000
     for episode in range(episodes):
