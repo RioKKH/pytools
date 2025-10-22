@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+方策勾配法の実装例 (CartPole-v0)
+"""
+
 if "__file__" in globals():
     import os
     import sys
@@ -38,7 +42,7 @@ class Agent:
         self.optimizer.setup(self.pi)
 
     def get_action(self, state):
-        state = state[np.newaxis, :]
+        state = state[np.newaxis, :]  # バッチの軸を追加する
         probs = self.pi(state)
         probs = probs[0]
         action = np.random.choice(len(probs), p=probs.data)
@@ -61,3 +65,34 @@ class Agent:
         loss.backward()
         self.optimizer.update()
         self.memory = []
+
+
+if __name__ == "__main__":
+    episodes = 3000
+    env = gym.make("CartPole-v0")
+    agent = Agent()
+    reward_history = []
+
+    for episode in range(episodes):
+        state = env.reset()
+        done = False
+        total_reward = 0
+
+        while not done:
+            action, prob = agent.get_action(state)
+            next_state, reward, done, info = env.step(action)
+
+            agent.add(reward, prob)
+            state = next_state
+            total_reward += reward
+
+        agent.update()
+
+        reward_history.append(total_reward)
+        if episode % 100 == 0:
+            print(f"episode :{episode}, total reward: {total_reward:.1f}")
+
+    # Plot
+    from common.utils import plot_total_reward
+
+    plot_total_reward(reward_history)
