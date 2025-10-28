@@ -77,4 +77,4 @@
 - Ape-X: Rainbow + 複数エージェントを別CPUで実行 + 異なる探索率ε
 - R2D2: Recurrent + Replay + Distributed + Deep Q-Network
 - NGU: R2D2 + 内発的報酬 (intrinsic reward)
-- Agent57: NGU + メタコントローラ→Atariの57のゲーム全てで初めて人間よりも良い成績を修めた。
+- Agent57: NGU + メタコントローラ→Atariの57のゲーム全てで初めて人間よりも良い成績を修めた
