@@ -31,17 +31,20 @@ def thread_llm(prompt):
 
 
 # ウィンドウのイベントを処理する
-
-# 一行入力ダイアログを表示
-prompt = eg.input(
-    "プロンプトを入力してください", default="白い猫の名前を１つ考えてください"
-)
-if prompt is None:
-    quit()
-
-# LLMに質問して結果を表示する
-response = client.generate(model=client_model, prompt=prompt)
-result = response["response"]
-
-# 答えをメモダイアログに表示する
-eg.popup_memo(result, title="LLMの応答")
+while True:
+    event, values = window.read()  # イベントと値を取得する
+    if event == eg.WIN_CLOSED:
+        break
+    if event == "実行":
+        # 入力されたプロンプトを取得
+        prompt = values["-prompt-"]
+        # ボタンを押せないように変更
+        window["実行"].update(disables=True)
+        # LLMに質問して結果を表示する
+        window.start_thread(thread_llm, prompt=prompt)
+    elif event == "実行完了":
+        # 結果を表示
+        result = values["result"]
+        window["-result-"].update(result)
+        # ボタンを押せるように変更
+        window["実行"].update(disables=False)
