@@ -5,11 +5,13 @@ import TkEasyGUI as eg
 
 # OllamaのAPIを使うための設定
 client = ollama.Client()
-# client_model = "llama3.2"
-client_model = "phi4"
+client_model = "llama3.2"
+# client_model = "phi4"
 default_prompt = (
     "親しい友人に手紙を書きます。気の利いた出だしの挨拶を一つ考えてください。"
 )
+
+client_result = ""  # モデルの結果を格納する変数
 
 # カスタムレイアウトのウィンドウを作成する
 layout = [
@@ -22,12 +24,16 @@ window = eg.Window("LLMに質問する", layout)
 
 
 # マルチスレッドでLLMに質問する関数を定義
-def thread_llm(prompt):
-    # LLMに室温して結果を表示
-    response = client.generate(model=client_model, prompt=prompt)
-    result = response["response"]
+def thread_llm_stream(prompt):
+    client_result = ""
+    # ストリームモードでLLMに質問して結果を表示する
+    stream = client.generate(model=client_model, stream=True, prompt=prompt)
+    # 順次ストリームイベントを送出
+    for chunk in stream:
+        res = chunk["response"]
+        window.post_event("ストリーム", {"result": res})
     # イベントをポストしてウィンドウを更新する
-    window.post_event("実行完了", {"result": result})
+    window.post_event("実行完了", {})
 
 
 # ウィンドウのイベントを処理する
@@ -41,10 +47,13 @@ while True:
         # ボタンを押せないように変更
         window["実行"].update(disables=True)
         # LLMに質問して結果を表示する
-        window.start_thread(thread_llm, prompt=prompt)
-    elif event == "実行完了":
-        # 結果を表示
+        window.start_thread(thread_llm_stream, prompt=prompt)
+    elif event == "ストリーム":
+        # ストリームイベントを受け取った時
         result = values["result"]
-        window["-result-"].update(result)
+        client_result += result
+        # 結果を表示
+        window["-result-"].update(client_result)
+    elif event == "実行完了":
         # ボタンを押せるように変更
         window["実行"].update(disables=False)
